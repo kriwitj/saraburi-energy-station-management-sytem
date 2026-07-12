@@ -1,0 +1,154 @@
+name: saraburi-charger
+
+services:
+  # ==============================
+  # PostgreSQL Database
+  # ==============================
+  postgres:
+    image: postgres:16-alpine
+    container_name: saraburi_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: saraburi_db
+      POSTGRES_USER: saraburi_user
+      POSTGRES_PASSWORD: saraburi_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U saraburi_user -d saraburi_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # ports:
+    #   - "5432:5432" # Un-comment to expose postgres locally if needed
+    networks:
+      - internal
+
+  # ==============================
+  # MinIO Object Storage
+  # ==============================
+  minio:
+    image: minio/minio:latest
+    container_name: saraburi_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    volumes:
+      - minio_data:/data
+    # ports:
+    #   - "9000:9000"    # S3 API (mapped via Traefik in production)
+    #   - "9001:9001"    # MinIO Web Console (mapped via Traefik in production)
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    networks:
+      - proxy_net
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy_net"
+      # Router for MinIO API (S3)
+      - "traefik.http.routers.saraburi-minio-api.rule=Host(`${MINIO_S3_DOMAIN:-s3.energy.saraburidev.org}`)"
+      - "traefik.http.routers.saraburi-minio-api.entrypoints=websecure"
+      - "traefik.http.routers.saraburi-minio-api.tls=true"
+      - "traefik.http.routers.saraburi-minio-api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.saraburi-minio-api.service=saraburi-minio-api-service"
+      - "traefik.http.services.saraburi-minio-api-service.loadbalancer.server.port=9000"
+      # Router for MinIO Console
+      - "traefik.http.routers.saraburi-minio-console.rule=Host(`${MINIO_CONSOLE_DOMAIN:-console.energy.saraburidev.org}`)"
+      - "traefik.http.routers.saraburi-minio-console.entrypoints=websecure"
+      - "traefik.http.routers.saraburi-minio-console.tls=true"
+      - "traefik.http.routers.saraburi-minio-console.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.saraburi-minio-console.service=saraburi-minio-console-service"
+      - "traefik.http.services.saraburi-minio-console-service.loadbalancer.server.port=9001"
+
+  # ==============================
+  # MinIO bucket setup (one-time)
+  # ==============================
+  minio-init:
+    image: minio/mc:latest
+    container_name: saraburi_minio_init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+        mc alias set myminio http://minio:9000 minioadmin minioadmin123;
+        mc mb --ignore-existing myminio/station-images;
+        mc anonymous set public myminio/station-images;
+        echo 'MinIO bucket ready!';
+      "
+    networks:
+      - internal
+
+  # ==============================
+  # Next.js Application
+  # ==============================
+  nextjs:
+    image: saraburi-nextjs:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: saraburi_nextjs
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://saraburi_user:saraburi_pass@postgres:5432/saraburi_db
+      SESSION_SECRET: ${SESSION_SECRET:-please-change-this-secret-in-production}
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: "9000"
+      MINIO_USE_SSL: "false"
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin123
+      MINIO_BUCKET_NAME: station-images
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-https://s3.energy.saraburidev.org}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-https://energy.saraburidev.org}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-please-change-this-secret-in-production}
+      NODE_ENV: production
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - proxy_net
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy_net"
+      # Router for Next.js Web App
+      - "traefik.http.routers.saraburi-nextjs.rule=Host(`${APP_DOMAIN:-energy.saraburidev.org}`) || Host(`www.${APP_DOMAIN:-energy.saraburidev.org}`)"
+      - "traefik.http.routers.saraburi-nextjs.entrypoints=websecure"
+      - "traefik.http.routers.saraburi-nextjs.tls=true"
+      - "traefik.http.routers.saraburi-nextjs.tls.certresolver=letsencrypt"
+      - "traefik.http.services.saraburi-nextjs.loadbalancer.server.port=3000"
+      # Middleware to redirect www to non-www
+      - "traefik.http.middlewares.saraburi-nextjs-www-redirect.redirectregex.regex=^https://www\\.${APP_DOMAIN:-energy.saraburidev.org}/(.*)"
+      - "traefik.http.middlewares.saraburi-nextjs-www-redirect.redirectregex.replacement=https://${APP_DOMAIN:-energy.saraburidev.org}/$${1}"
+      - "traefik.http.routers.saraburi-nextjs.middlewares=saraburi-nextjs-www-redirect"
+
+# ==============================
+# Volumes
+# ==============================
+volumes:
+  postgres_data:
+  minio_data:
+
+# ==============================
+# Networks
+# ==============================
+networks:
+  proxy_net:
+    external: true
+  internal:
+    driver: bridge

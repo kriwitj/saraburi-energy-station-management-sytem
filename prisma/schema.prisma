@@ -1,0 +1,108 @@
+// Saraburi Energy Station Management System
+// Prisma Schema — PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==============================
+// ENUMS
+// ==============================
+
+enum Amphoe {
+  MUEANG_SARABURI    // เมืองสระบุรี
+  KAENG_KHOI         // แก่งคอย
+  NONG_KHAE          // หนองแค
+  WIHAN_DAENG        // วิหารแดง
+  NONG_SAENG         // หนองแซง
+  BAN_MO             // บ้านหมอ
+  DON_PHUT           // ดอนพุด
+  NONG_DON           // หนองโดน
+  PHRA_PHUTTHABAT    // พระพุทธบาท
+  SAO_HAI            // เสาไห้
+  MUAK_LEK           // มวกเหล็ก
+  WANG_MUANG         // วังม่วง
+  CHALOEM_PHRA_KIAT  // เฉลิมพระเกียรติ
+}
+
+enum Role {
+  ADMIN   // จัดการทุกอย่าง รวมถึง Users
+  EDITOR  // เพิ่ม/แก้ไขสถานีได้
+  VIEWER  // ดูข้อมูลได้อย่างเดียว
+}
+
+// ==============================
+// MODELS
+// ==============================
+
+model Brand {
+  id         String    @id @default(uuid())
+  name       String
+  short_name String
+  logo_url   String?
+  stations   Station[]
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+
+  @@map("brands")
+}
+
+model EnergyType {
+  id        String   @id // e.g., "OIL", "LPG", "NGV", "EV"
+  name      String   // e.g., "น้ำมัน"
+  icon      String   // e.g., "⛽"
+  map_color String   // e.g., "#3B82F6"
+
+  @@map("energy_types")
+}
+
+model StationType {
+  id          String    @id // e.g., "STATION", "CHARGING_HUB"
+  name        String    // e.g., "ปั๊มพลังงาน"
+  icon        String    // e.g., "⛽"
+  description String?   // optional description
+  stations    Station[]
+
+  @@map("station_types")
+}
+
+model Station {
+  id                String      @id @default(uuid())
+  station_code      String      @unique // รหัสปั๊ม (StationID)
+  station_name      String
+  station_type_id   String      // FK → StationType.id
+  station_type      StationType @relation(fields: [station_type_id], references: [id])
+  brand_id          String
+  brand             Brand       @relation(fields: [brand_id], references: [id])
+  energy_types      String[]    // Array of EnergyType ids
+  details           String?     @db.Text
+  latitude          Float
+  longitude         Float
+  amphoe            Amphoe
+  tambon            String
+  address_details   String?     @db.Text
+  image_url         String?
+  google_map_url    String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("stations")
+}
+
+model User {
+  id       String @id @default(uuid())
+  username String @unique
+  password String // bcrypt hash
+  name     String
+  role     Role   @default(EDITOR)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
