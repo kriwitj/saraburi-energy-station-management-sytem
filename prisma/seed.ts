@@ -1,22 +1,20 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
 import fs from "fs";
 import path from "path";
-import dotenv from "dotenv";
 
-// Load local environment variables (like DATABASE_URL)
-const envLocalPath = path.resolve(process.cwd(), ".env.local");
-if (fs.existsSync(envLocalPath)) {
-  dotenv.config({ path: envLocalPath });
-} else {
-  dotenv.config();
+// Load local environment variables if dotenv is available (for local dev)
+try {
+  const envLocalPath = path.resolve(process.cwd(), ".env.local");
+  if (fs.existsSync(envLocalPath)) {
+    require("dotenv").config({ path: envLocalPath });
+  } else {
+    require("dotenv").config();
+  }
+} catch {
+  // dotenv is a devDependency; ignore if missing in production container
 }
 
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL,
-});
-
-const prisma = new PrismaClient({ adapter });
+const prisma = new PrismaClient();
 
 async function main() {
   console.log("🌱 Seeding database...");
