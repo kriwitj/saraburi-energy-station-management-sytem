@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 import fs from "fs";
 import path from "path";
 
@@ -14,13 +15,11 @@ try {
   // dotenv is a devDependency; ignore if missing in production container
 }
 
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL,
-    },
-  },
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL as string,
 } as any);
+
+const prisma = new PrismaClient({ adapter } as any);
 
 async function main() {
   console.log("🌱 Seeding database...");
