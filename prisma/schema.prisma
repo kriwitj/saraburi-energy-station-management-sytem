@@ -14,19 +14,19 @@ datasource db {
 // ==============================
 
 enum Amphoe {
-  MUEANG_SARABURI    // เมืองสระบุรี
-  KAENG_KHOI         // แก่งคอย
-  NONG_KHAE          // หนองแค
-  WIHAN_DAENG        // วิหารแดง
-  NONG_SAENG         // หนองแซง
-  BAN_MO             // บ้านหมอ
-  DON_PHUT           // ดอนพุด
-  NONG_DON           // หนองโดน
-  PHRA_PHUTTHABAT    // พระพุทธบาท
-  SAO_HAI            // เสาไห้
-  MUAK_LEK           // มวกเหล็ก
-  WANG_MUANG         // วังม่วง
-  CHALOEM_PHRA_KIAT  // เฉลิมพระเกียรติ
+  MUEANG_SARABURI    @map("เมืองสระบุรี")
+  KAENG_KHOI         @map("แก่งคอย")
+  NONG_KHAE          @map("หนองแค")
+  WIHAN_DAENG        @map("วิหารแดง")
+  NONG_SAENG         @map("หนองแซง")
+  BAN_MO             @map("บ้านหมอ")
+  DON_PHUT           @map("ดอนพุด")
+  NONG_DON           @map("หนองโดน")
+  PHRA_PHUTTHABAT    @map("พระพุทธบาท")
+  SAO_HAI            @map("เสาไห้")
+  MUAK_LEK           @map("มวกเหล็ก")
+  WANG_MUANG         @map("วังม่วง")
+  CHALOEM_PHRA_KIAT  @map("เฉลิมพระเกียรติ")
 }
 
 enum Role {
