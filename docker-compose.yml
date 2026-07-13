@@ -20,8 +20,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    ports:
-      - "5432:5432" # Un-comment to expose postgres locally if needed
+    # ports:
+    #   - "5432:5432" # Un-comment to expose postgres locally if needed
     networks:
       - internal
 
