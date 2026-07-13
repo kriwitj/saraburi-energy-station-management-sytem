@@ -4,6 +4,8 @@ import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 import { stationSchema } from "@/lib/validations";
 import { deleteFileByUrl } from "@/lib/minio";
+import { getAmphoeLabel, AMPHOE_MAP_TO_ENUM } from "@/lib/constants";
+import type { Amphoe } from "@prisma/client";
 
 // GET /api/stations/[id]
 export async function GET(
@@ -22,7 +24,13 @@ export async function GET(
     return NextResponse.json({ error: "ไม่พบข้อมูลสถานี" }, { status: 404 });
   }
 
-  return NextResponse.json({ data: station });
+  const { station_code, ...rest } = station;
+  const formattedStation = {
+    ...rest,
+    amphoe: getAmphoeLabel(station.amphoe),
+  };
+
+  return NextResponse.json({ data: formattedStation });
 }
 
 // PUT /api/stations/[id]
@@ -51,19 +59,36 @@ export async function PUT(
       );
     }
 
+    const prismaAmphoe = AMPHOE_MAP_TO_ENUM[parsed.data.amphoe] as Amphoe;
+
+    const { station_code, ...restData } = parsed.data;
+
+    const updateData: any = {
+      ...restData,
+      amphoe: prismaAmphoe,
+      energy_types: parsed.data.energy_types as string[],
+      details: parsed.data.details || null,
+      address_details: parsed.data.address_details || null,
+      image_url: parsed.data.image_url || null,
+      google_map_url: parsed.data.google_map_url || null,
+    };
+
+    if (station_code && station_code.trim()) {
+      updateData.station_code = station_code;
+    }
+
     const station = await prisma.station.update({
       where: { id },
-      data: {
-        ...parsed.data,
-        energy_types: parsed.data.energy_types as string[],
-        details: parsed.data.details || null,
-        address_details: parsed.data.address_details || null,
-        image_url: parsed.data.image_url || null,
-        google_map_url: parsed.data.google_map_url || null,
-      },
+      data: updateData,
     });
 
-    return NextResponse.json({ data: station });
+    const { station_code: _, ...rest } = station;
+    const formattedStation = {
+      ...rest,
+      amphoe: getAmphoeLabel(station.amphoe),
+    };
+
+    return NextResponse.json({ data: formattedStation });
   } catch (error) {
     console.error("Update station error:", error);
     return NextResponse.json(

@@ -12,7 +12,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
   try {
     const body = await request.json();
-    const { name, icon, map_color } = body;
+    const { name, icon, map_color, show_icon } = body;
 
     if (!name || !icon || !map_color) {
       return NextResponse.json({ error: "กรุณาระบุชื่อ, ไอคอน และสีบนแผนที่" }, { status: 400 });
@@ -20,7 +20,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const energyType = await prisma.energyType.update({
       where: { id },
-      data: { name, icon, map_color },
+      data: {
+        name,
+        icon,
+        map_color,
+        show_icon: show_icon !== undefined ? Boolean(show_icon) : true,
+      },
     });
 
     return NextResponse.json({ data: energyType });

@@ -25,6 +25,7 @@ interface EnergyType {
   name: string;
   icon: string;
   map_color: string;
+  show_icon: boolean;
 }
 
 type TabType = "station-types" | "brands" | "energy-types";
@@ -64,7 +65,7 @@ export default function AdminSettingsPage() {
   const [loadingEnergyTypes, setLoadingEnergyTypes] = useState(true);
   const [showEtForm, setShowEtForm] = useState(false);
   const [editEtId, setEditEtId] = useState<string | null>(null);
-  const [etForm, setEtForm] = useState({ id: "", name: "", icon: "", map_color: "#3B82F6" });
+  const [etForm, setEtForm] = useState({ id: "", name: "", icon: "", map_color: "#3B82F6", show_icon: true });
   const [etErrors, setEtErrors] = useState<Record<string, string>>({});
 
   // ==========================================
@@ -280,7 +281,7 @@ export default function AdminSettingsPage() {
   // CRUD Handlers: Energy Types
   // ==========================================
   function resetEtForm() {
-    setEtForm({ id: "", name: "", icon: "", map_color: "#3B82F6" });
+    setEtForm({ id: "", name: "", icon: "", map_color: "#3B82F6", show_icon: true });
     setEditEtId(null);
     setEtErrors({});
   }
@@ -307,7 +308,7 @@ export default function AdminSettingsPage() {
         const res = await fetch(`/api/energy-types/${editEtId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: etForm.name, icon: etForm.icon, map_color: etForm.map_color }),
+          body: JSON.stringify({ name: etForm.name, icon: etForm.icon, map_color: etForm.map_color, show_icon: etForm.show_icon }),
         });
         const data = await res.json();
         if (!res.ok) { toast.error(data.error); return; }
@@ -331,7 +332,13 @@ export default function AdminSettingsPage() {
 
   function handleEditEt(et: EnergyType) {
     setEditEtId(et.id);
-    setEtForm({ id: et.id, name: et.name, icon: et.icon, map_color: et.map_color });
+    setEtForm({ 
+      id: et.id, 
+      name: et.name, 
+      icon: et.icon, 
+      map_color: et.map_color, 
+      show_icon: et.show_icon !== undefined ? et.show_icon : true 
+    });
     setShowEtForm(true);
   }
 
@@ -779,6 +786,18 @@ export default function AdminSettingsPage() {
                   {etErrors.map_color && <p className="text-[10px] mt-0.5 text-red-500">{etErrors.map_color}</p>}
                 </div>
               </div>
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  id="etForm-show-icon"
+                  type="checkbox"
+                  checked={etForm.show_icon}
+                  onChange={(e) => setEtForm(f => ({ ...f, show_icon: e.target.checked }))}
+                  className="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                />
+                <label htmlFor="etForm-show-icon" className="text-xs font-bold text-slate-600 select-none cursor-pointer">
+                  แสดงสัญลักษณ์ข้างในจุดตำแหน่งบนแผนที่ (ถ้าไม่ได้ติ๊กจะแสดงเป็นจุดวงกลมสีธรรมดา)
+                </label>
+              </div>
               <div className="flex gap-2 justify-end pt-1">
                 <button
                   type="button"
@@ -811,6 +830,7 @@ export default function AdminSettingsPage() {
                     <th className="p-3 w-16 text-center">สัญลักษณ์</th>
                     <th className="p-3">ประเภทพลังงาน / ID</th>
                     <th className="p-3">สีแสดงผลบนแผนที่</th>
+                    <th className="p-3">แสดงสัญลักษณ์บนแผนที่</th>
                     <th className="p-3 text-right">การจัดการ</th>
                   </tr>
                 </thead>
@@ -832,6 +852,15 @@ export default function AdminSettingsPage() {
                           />
                           <span className="font-mono text-[10px]">{et.map_color}</span>
                         </div>
+                      </td>
+                      <td className="p-3">
+                        <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
+                          et.show_icon || et.show_icon === undefined 
+                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
+                            : 'bg-slate-50 text-slate-500 border border-slate-200'
+                        }`}>
+                          {et.show_icon || et.show_icon === undefined ? 'แสดง' : 'ซ่อน (จุดกลมทึบ)'}
+                        </span>
                       </td>
                       <td className="p-3 text-right space-x-1.5">
                         <button

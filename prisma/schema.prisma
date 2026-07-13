@@ -56,6 +56,7 @@ model EnergyType {
   name      String   // e.g., "น้ำมัน"
   icon      String   // e.g., "⛽"
   map_color String   // e.g., "#3B82F6"
+  show_icon Boolean  @default(true)
 
   @@map("energy_types")
 }

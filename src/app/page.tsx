@@ -13,6 +13,7 @@ export default async function HomePage() {
 
   // Fetch all stations from database for the public map
   const stations = await prisma.station.findMany({
+    include: { brand: true, station_type: true },
     orderBy: { created_at: "desc" },
   });
 

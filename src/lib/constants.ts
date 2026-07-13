@@ -1,26 +1,61 @@
 import type { Amphoe } from "@prisma/client";
 
+export const AMPHOE_MAP_TO_ENUM: Record<string, Amphoe> = {
+  "เมืองสระบุรี": "MUEANG_SARABURI",
+  "แก่งคอย": "KAENG_KHOI",
+  "หนองแค": "NONG_KHAE",
+  "วิหารแดง": "WIHAN_DAENG",
+  "หนองแซง": "NONG_SAENG",
+  "บ้านหมอ": "BAN_MO",
+  "ดอนพุด": "DON_PHUT",
+  "หนองโดน": "NONG_DON",
+  "พระพุทธบาท": "PHRA_PHUTTHABAT",
+  "เสาไห้": "SAO_HAI",
+  "มวกเหล็ก": "MUAK_LEK",
+  "วังม่วง": "WANG_MUANG",
+  "เฉลิมพระเกียรติ": "CHALOEM_PHRA_KIAT",
+};
+
+export const AMPHOE_MAP_TO_THAI: Record<Amphoe, string> = {
+  MUEANG_SARABURI: "เมืองสระบุรี",
+  KAENG_KHOI: "แก่งคอย",
+  NONG_KHAE: "หนองแค",
+  WIHAN_DAENG: "วิหารแดง",
+  NONG_SAENG: "หนองแซง",
+  BAN_MO: "บ้านหมอ",
+  DON_PHUT: "ดอนพุด",
+  NONG_DON: "หนองโดน",
+  PHRA_PHUTTHABAT: "พระพุทธบาท",
+  SAO_HAI: "เสาไห้",
+  MUAK_LEK: "มวกเหล็ก",
+  WANG_MUANG: "วังม่วง",
+  CHALOEM_PHRA_KIAT: "เฉลิมพระเกียรติ",
+};
+
 // ==============================
 // 13 อำเภอของจังหวัดสระบุรี
 // ==============================
-export const AMPHOE_LIST: { value: Amphoe; label: string }[] = [
-  { value: "MUEANG_SARABURI", label: "เมืองสระบุรี" },
-  { value: "KAENG_KHOI", label: "แก่งคอย" },
-  { value: "NONG_KHAE", label: "หนองแค" },
-  { value: "WIHAN_DAENG", label: "วิหารแดง" },
-  { value: "NONG_SAENG", label: "หนองแซง" },
-  { value: "BAN_MO", label: "บ้านหมอ" },
-  { value: "DON_PHUT", label: "ดอนพุด" },
-  { value: "NONG_DON", label: "หนองโดน" },
-  { value: "PHRA_PHUTTHABAT", label: "พระพุทธบาท" },
-  { value: "SAO_HAI", label: "เสาไห้" },
-  { value: "MUAK_LEK", label: "มวกเหล็ก" },
-  { value: "WANG_MUANG", label: "วังม่วง" },
-  { value: "CHALOEM_PHRA_KIAT", label: "เฉลิมพระเกียรติ" },
+export const AMPHOE_LIST: { value: string; label: string }[] = [
+  { value: "เมืองสระบุรี", label: "เมืองสระบุรี" },
+  { value: "แก่งคอย", label: "แก่งคอย" },
+  { value: "หนองแค", label: "หนองแค" },
+  { value: "วิหารแดง", label: "วิหารแดง" },
+  { value: "หนองแซง", label: "หนองแซง" },
+  { value: "บ้านหมอ", label: "บ้านหมอ" },
+  { value: "ดอนพุด", label: "ดอนพุด" },
+  { value: "หนองโดน", label: "หนองโดน" },
+  { value: "พระพุทธบาท", label: "พระพุทธบาท" },
+  { value: "เสาไห้", label: "เสาไห้" },
+  { value: "มวกเหล็ก", label: "มวกเหล็ก" },
+  { value: "วังม่วง", label: "วังม่วง" },
+  { value: "เฉลิมพระเกียรติ", label: "เฉลิมพระเกียรติ" },
 ];
 
-export function getAmphoeLabel(value: Amphoe): string {
-  return AMPHOE_LIST.find((a) => a.value === value)?.label ?? value;
+export function getAmphoeLabel(value: string | Amphoe): string {
+  if (value in AMPHOE_MAP_TO_THAI) {
+    return AMPHOE_MAP_TO_THAI[value as Amphoe];
+  }
+  return value;
 }
 
 // ==============================
@@ -70,20 +105,20 @@ export type EnergyTypeKey = keyof typeof ENERGY_TYPE_CONFIG;
 // ==============================
 // Geographic Center of each Amphoe (for map flyTo)
 // ==============================
-export const AMPHOE_CENTERS: Record<Amphoe, [number, number]> = {
-  MUEANG_SARABURI: [14.5295, 100.9101],
-  KAENG_KHOI: [14.5834, 101.0023],
-  NONG_KHAE: [14.3384, 100.8734],
-  WIHAN_DAENG: [14.4789, 101.0956],
-  NONG_SAENG: [14.5567, 100.6789],
-  BAN_MO: [14.5234, 100.6123],
-  DON_PHUT: [14.4012, 100.9345],
-  NONG_DON: [14.6123, 100.7234],
-  PHRA_PHUTTHABAT: [14.7189, 100.7956],
-  SAO_HAI: [14.6634, 100.8234],
-  MUAK_LEK: [14.5789, 101.3456],
-  WANG_MUANG: [14.4456, 101.2345],
-  CHALOEM_PHRA_KIAT: [14.3789, 101.0678],
+export const AMPHOE_CENTERS: Record<string, [number, number]> = {
+  "เมืองสระบุรี": [14.5295, 100.9101],
+  "แก่งคอย": [14.5834, 101.0023],
+  "หนองแค": [14.3384, 100.8734],
+  "วิหารแดง": [14.4789, 101.0956],
+  "หนองแซง": [14.5567, 100.6789],
+  "บ้านหมอ": [14.5234, 100.6123],
+  "ดอนพุด": [14.4012, 100.9345],
+  "หนองโดน": [14.6123, 100.7234],
+  "พระพุทธบาท": [14.7189, 100.7956],
+  "เสาไห้": [14.6634, 100.8234],
+  "มวกเหล็ก": [14.5789, 101.3456],
+  "วังม่วง": [14.4456, 101.2345],
+  "เฉลิมพระเกียรติ": [14.3789, 101.0678],
 };
 
 // Center of Saraburi Province

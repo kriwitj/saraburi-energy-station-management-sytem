@@ -9,7 +9,7 @@ export interface StationType {
 
 export interface Station {
   id: string;
-  station_code: string;
+  station_code?: string;
   station_name: string;
   station_type_id: string;
   station_type?: StationType;
@@ -24,7 +24,7 @@ export interface Station {
   details: string | null;
   latitude: number;
   longitude: number;
-  amphoe: Amphoe;
+  amphoe: string;
   tambon: string;
   address_details: string | null;
   image_url: string | null;
@@ -59,7 +59,7 @@ export interface PaginatedResult<T> {
 
 export interface StationFilters {
   search?: string;
-  amphoe?: Amphoe | "";
+  amphoe?: string | "";
   energy_type?: string;
   page?: number;
   limit?: number;
@@ -71,5 +71,5 @@ export interface StatsData {
   lpg: number;
   ngv: number;
   ev: number;
-  byAmphoe: { amphoe: Amphoe; count: number }[];
+  byAmphoe: { amphoe: string; count: number }[];
 }

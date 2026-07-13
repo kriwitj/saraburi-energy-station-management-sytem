@@ -40,6 +40,12 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* option styling inside dropdowns to prevent white-on-white text issues */
+option {
+  color: #1e293b !important;
+  background-color: #ffffff !important;
+}
+
 /* ==============================
    Scrollbar Styling
    ============================== */

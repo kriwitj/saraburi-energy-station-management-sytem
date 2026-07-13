@@ -29,7 +29,7 @@ export default function StationTable({ stations, userRole, onRefresh }: StationT
       <table className="w-full min-w-[900px]">
         <thead>
           <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
-            {["รหัสปั๊ม (ID)", "แบรนด์", "ชื่อสถานี", "ประเภท", "ประเภทเชื้อเพลิง", "อำเภอ / ตำบล", "พิกัด", "Google Maps", ""].map((h) => (
+            {["แบรนด์", "ชื่อสถานี", "ประเภท", "ประเภทเชื้อเพลิง", "อำเภอ / ตำบล", "พิกัด", "Google Maps", ""].map((h) => (
               <th
                 key={h}
                 className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider"
@@ -54,9 +54,7 @@ export default function StationTable({ stations, userRole, onRefresh }: StationT
                 (e.currentTarget as HTMLTableRowElement).style.background = "transparent";
               }}
             >
-              <td className="px-4 py-3">
-                <span className="font-mono text-xs text-sky-600 font-bold">{station.station_code || "-"}</span>
-              </td>
+
               <td className="px-4 py-3">
                 <div className="flex items-center gap-1.5 min-w-0">
                   {station.brand?.logo_url && (

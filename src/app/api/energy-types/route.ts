@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { id, name, icon, map_color } = body;
+    const { id, name, icon, map_color, show_icon } = body;
 
     if (!id || !name || !icon || !map_color) {
       return NextResponse.json({ error: "กรุณาระบุ ID, ชื่อ, ไอคอน และสีบนแผนที่" }, { status: 400 });
@@ -37,7 +37,13 @@ export async function POST(request: NextRequest) {
     }
 
     const energyType = await prisma.energyType.create({
-      data: { id, name, icon, map_color },
+      data: {
+        id,
+        name,
+        icon,
+        map_color,
+        show_icon: show_icon !== undefined ? Boolean(show_icon) : true,
+      },
     });
 
     return NextResponse.json({ data: energyType });

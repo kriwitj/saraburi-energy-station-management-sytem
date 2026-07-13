@@ -13,8 +13,10 @@ export const stationSchema = z.object({
     .max(200, "ชื่อสถานีต้องไม่เกิน 200 ตัวอักษร"),
   station_code: z
     .string()
-    .min(2, "รหัสปั๊มต้องมีอย่างน้อย 2 ตัวอักษร")
-    .max(50, "รหัสปั๊มต้องไม่เกิน 50 ตัวอักษร"),
+    .max(50)
+    .optional()
+    .or(z.literal(""))
+    .or(z.null()),
   station_type_id: z
     .string()
     .min(1, "กรุณาเลือกประเภทสถานี"),
@@ -34,19 +36,19 @@ export const stationSchema = z.object({
     .min(-180)
     .max(180),
   amphoe: z.enum([
-    "MUEANG_SARABURI",
-    "KAENG_KHOI",
-    "NONG_KHAE",
-    "WIHAN_DAENG",
-    "NONG_SAENG",
-    "BAN_MO",
-    "DON_PHUT",
-    "NONG_DON",
-    "PHRA_PHUTTHABAT",
-    "SAO_HAI",
-    "MUAK_LEK",
-    "WANG_MUANG",
-    "CHALOEM_PHRA_KIAT",
+    "เมืองสระบุรี",
+    "แก่งคอย",
+    "หนองแค",
+    "วิหารแดง",
+    "หนองแซง",
+    "บ้านหมอ",
+    "ดอนพุด",
+    "หนองโดน",
+    "พระพุทธบาท",
+    "เสาไห้",
+    "มวกเหล็ก",
+    "วังม่วง",
+    "เฉลิมพระเกียรติ",
   ]),
   tambon: z
     .string()

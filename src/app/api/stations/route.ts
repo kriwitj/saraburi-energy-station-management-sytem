@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 import { stationSchema } from "@/lib/validations";
 import type { Amphoe } from "@prisma/client";
-import { getAmphoeLabel } from "@/lib/constants";
+import { getAmphoeLabel, AMPHOE_MAP_TO_ENUM } from "@/lib/constants";
 
 // GET /api/stations
 export async function GET(request: NextRequest) {
@@ -12,7 +12,8 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("search") || "";
-  const amphoe = searchParams.get("amphoe") as Amphoe | null;
+  const amphoeParam = searchParams.get("amphoe") || "";
+  const amphoe = AMPHOE_MAP_TO_ENUM[amphoeParam] as Amphoe | undefined;
   const energy_type = searchParams.get("energy_type") || "";
   const page = parseInt(searchParams.get("page") || "1");
   const limit = parseInt(searchParams.get("limit") || "20");
@@ -63,10 +64,13 @@ export async function GET(request: NextRequest) {
   };
 
   return NextResponse.json({
-    data: stations.map((s) => ({
-      ...s,
-      amphoe_label: getAmphoeLabel(s.amphoe),
-    })),
+    data: stations.map((s) => {
+      const { station_code, ...rest } = s;
+      return {
+        ...rest,
+        amphoe: getAmphoeLabel(s.amphoe),
+      };
+    }),
     total,
     page,
     limit,
@@ -96,9 +100,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const prismaAmphoe = AMPHOE_MAP_TO_ENUM[parsed.data.amphoe] as Amphoe;
+
+    const generatedStationCode = parsed.data.station_code || `ST-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+
     const station = await prisma.station.create({
       data: {
         ...parsed.data,
+        station_code: generatedStationCode,
+        amphoe: prismaAmphoe,
         energy_types: parsed.data.energy_types as string[],
         details: parsed.data.details || null,
         address_details: parsed.data.address_details || null,

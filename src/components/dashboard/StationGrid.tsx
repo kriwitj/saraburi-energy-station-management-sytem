@@ -50,8 +50,7 @@ export default function StationGrid({ stations, userRole, onRefresh }: StationGr
 
           {/* Content */}
           <div className="p-4 space-y-2.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-mono font-bold text-sky-600">{station.station_code || "-"}</span>
+            <div className="flex items-center justify-end text-xs">
               <span className="text-[10px] font-bold text-slate-600 px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200">
                 {station.station_type ? `${station.station_type.icon} ${station.station_type.name}` : station.station_type_id}
               </span>

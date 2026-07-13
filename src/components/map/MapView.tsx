@@ -19,6 +19,8 @@ interface MapViewProps {
   selectedStation?: Station | null;
   onSelectStation?: (station: Station | null) => void;
   userLocation?: [number, number] | null;
+  selectedType?: string;
+  energyTypes?: any[];
 }
 
 export default function MapView({
@@ -26,6 +28,8 @@ export default function MapView({
   selectedStation: externalSelectedStation,
   onSelectStation,
   userLocation,
+  selectedType,
+  energyTypes,
 }: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -168,6 +172,19 @@ export default function MapView({
   useEffect(() => {
     if (!mapReady || !leafletMapRef.current) return;
 
+    // Build dynamic lookup configuration from db energyTypes
+    const dynamicConfigs = (energyTypes && energyTypes.length > 0)
+      ? energyTypes.reduce((acc, et) => {
+          acc[et.id] = {
+            label: et.name,
+            icon: et.icon,
+            mapColor: et.map_color,
+            showIcon: et.show_icon !== undefined ? et.show_icon : true,
+          };
+          return acc;
+        }, {} as any)
+      : null;
+
     import("leaflet").then((L) => {
       const map = leafletMapRef.current;
       // Remove old markers
@@ -180,22 +197,52 @@ export default function MapView({
       });
 
       stations.forEach((station) => {
-        // Determine color from first energy type
-        const primaryType = station.energy_types[0] as EnergyTypeKey;
-        const color = ENERGY_TYPE_CONFIG[primaryType]?.mapColor ?? "#64748b";
+        // Determine color from selectedType or first energy type
+        const highlightType = (selectedType && station.energy_types.includes(selectedType))
+          ? selectedType
+          : (station.energy_types[0] || "OIL");
+
+        const config = dynamicConfigs?.[highlightType]
+          || ENERGY_TYPE_CONFIG[highlightType as EnergyTypeKey];
+
+        const color = config?.mapColor ?? config?.map_color ?? "#64748b";
+        const iconSymbol = config?.icon ?? "⛽";
+        
+        // Use showIcon from database config: if true, show symbol inside 22px circle. Else show 12px dot.
+        const shouldShowIcon = config?.showIcon !== undefined ? config.showIcon : true;
+
+        const size = shouldShowIcon ? 22 : 12;
+        const radius = size / 2;
+
+        const htmlContent = shouldShowIcon
+          ? `<div style="
+              width: ${size}px;
+              height: ${size}px;
+              border-radius: 50%;
+              background: ${color};
+              border: 1.5px solid white;
+              box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 10px;
+              line-height: 1;
+            ">${iconSymbol}</div>`
+          : `<div style="
+              width: ${size}px;
+              height: ${size}px;
+              border-radius: 50%;
+              background: ${color};
+              border: 1.5px solid white;
+              box-shadow: 0 1.5px 3.5px rgba(0,0,0,0.4);
+            "></div>`;
 
         const icon = L.divIcon({
           className: "",
-          html: `<div style="
-            width:32px;height:32px;border-radius:50% 50% 50% 0;
-            background:${color};
-            transform:rotate(-45deg);
-            border:3px solid white;
-            box-shadow:0 4px 12px rgba(0,0,0,0.4);
-          "></div>`,
-          iconSize: [32, 32],
-          iconAnchor: [16, 32],
-          popupAnchor: [0, -32],
+          html: htmlContent,
+          iconSize: [size, size],
+          iconAnchor: [radius, radius],
+          popupAnchor: [0, -radius],
         });
 
         const marker = L.marker([station.latitude, station.longitude], {
@@ -212,7 +259,7 @@ export default function MapView({
         });
       });
     });
-  }, [mapReady, stations]);
+  }, [mapReady, stations, selectedType, energyTypes]);
 
   // FlyTo district
   function handleAmphoeChange(value: string) {
@@ -250,9 +297,9 @@ export default function MapView({
               minWidth: "160px",
             }}
           >
-            <option value="">🗺 ทุกอำเภอ</option>
+            <option value="" style={{ color: "#334155" }}>🗺 ทุกอำเภอ</option>
             {AMPHOE_LIST.map((a) => (
-              <option key={a.value} value={a.value}>{a.label}</option>
+              <option key={a.value} value={a.value} style={{ color: "#334155" }}>{a.label}</option>
             ))}
           </select>
         </div>

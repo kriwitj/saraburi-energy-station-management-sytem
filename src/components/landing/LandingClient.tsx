@@ -94,7 +94,7 @@ export default function LandingClient({ initialStations, session: initialSession
 
   // Metadata dynamic states
   const [brands, setBrands] = useState<{ id: string; name: string; short_name: string; logo_url: string | null }[]>([]);
-  const [energyTypes, setEnergyTypes] = useState<{ id: string; name: string; icon: string; map_color: string }[]>([]);
+  const [energyTypes, setEnergyTypes] = useState<{ id: string; name: string; icon: string; map_color: string; show_icon?: boolean }[]>([]);
   const [stationTypes, setStationTypes] = useState<{ id: string; name: string; icon: string }[]>([]);
 
   // Form State (For Add/Edit Station)
@@ -561,6 +561,16 @@ export default function LandingClient({ initialStations, session: initialSession
 
         {/* Action Panel: Login/User details */}
         <div className="flex items-center gap-2">
+          <Link
+            href="/api-docs"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white transition-colors border border-white/10 hover:border-white/20 touch-target"
+            style={{ background: "rgba(255, 255, 255, 0.03)" }}
+          >
+            <FileText className="w-4 h-4 text-[#0ea5e9]" />
+            <span className="hidden sm:inline">ดึงข้อมูลผ่าน API</span>
+            <span className="sm:hidden">API Docs</span>
+          </Link>
+
           {session ? (
             <div className="flex items-center gap-2">
               {/* Admin users list trigger */}
@@ -615,6 +625,8 @@ export default function LandingClient({ initialStations, session: initialSession
             selectedStation={selectedStation}
             onSelectStation={handleSelectStation}
             userLocation={userLocation}
+            selectedType={selectedType}
+            energyTypes={energyTypes}
           />
         </div>
 
@@ -682,9 +694,9 @@ export default function LandingClient({ initialStations, session: initialSession
                       className="input-dark w-full px-3 py-2 text-xs"
                       style={{ color: selectedAmphoe ? "#f1f5f9" : "#64748b", borderRadius: "8px" }}
                     >
-                      <option value="">🗺 ทุกอำเภอ</option>
+                      <option value="" style={{ color: "#334155" }}>🗺 ทุกอำเภอ</option>
                       {AMPHOE_LIST.map((a) => (
-                        <option key={a.value} value={a.value}>{a.label}</option>
+                        <option key={a.value} value={a.value} style={{ color: "#334155" }}>{a.label}</option>
                       ))}
                     </select>
 
@@ -858,11 +870,6 @@ export default function LandingClient({ initialStations, session: initialSession
 
                     {/* Brand, Type, & StationID Cards */}
                     <div className="grid grid-cols-1 gap-2 text-xs">
-                      <div className="flex items-center justify-between glass-card p-2.5">
-                        <span className="text-[10px] text-slate-400 font-semibold uppercase">รหัสปั๊ม (ID)</span>
-                        <span className="font-mono font-bold text-sky-400">{selectedStation.station_code}</span>
-                      </div>
-                      
                       <div className="grid grid-cols-2 gap-2">
                         <div className="glass-card p-2.5 flex flex-col justify-between min-h-[56px]">
                           <span className="text-[10px] text-slate-400 font-semibold uppercase block">แบรนด์</span>
@@ -1140,9 +1147,9 @@ export default function LandingClient({ initialStations, session: initialSession
                         onChange={(e) => setStationForm((f) => ({ ...f, amphoe: e.target.value }))}
                         className="input-dark w-full px-3 py-2 text-xs"
                       >
-                        <option value="">เลือกอำเภอ</option>
+                        <option value="" style={{ color: "#334155" }}>เลือกอำเภอ</option>
                         {AMPHOE_LIST.map((a) => (
-                          <option key={a.value} value={a.value}>{a.label}</option>
+                          <option key={a.value} value={a.value} style={{ color: "#334155" }}>{a.label}</option>
                         ))}
                       </select>
                       {formErrors.amphoe && (
@@ -1524,9 +1531,9 @@ export default function LandingClient({ initialStations, session: initialSession
                           onChange={(e) => setStationForm((f) => ({ ...f, amphoe: e.target.value }))}
                           className="input-dark w-full px-3 py-2 text-xs"
                         >
-                          <option value="">เลือกอำเภอ</option>
+                          <option value="" style={{ color: "#334155" }}>เลือกอำเภอ</option>
                           {AMPHOE_LIST.map((a) => (
-                            <option key={a.value} value={a.value}>{a.label}</option>
+                            <option key={a.value} value={a.value} style={{ color: "#334155" }}>{a.label}</option>
                           ))}
                         </select>
                       </div>
