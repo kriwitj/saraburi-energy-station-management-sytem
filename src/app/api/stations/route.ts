@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 import { stationSchema } from "@/lib/validations";
 import type { Amphoe } from "@prisma/client";
+import { getAmphoeLabel } from "@/lib/constants";
 
 // GET /api/stations
 export async function GET(request: NextRequest) {
@@ -62,7 +63,10 @@ export async function GET(request: NextRequest) {
   };
 
   return NextResponse.json({
-    data: stations,
+    data: stations.map((s) => ({
+      ...s,
+      amphoe_label: getAmphoeLabel(s.amphoe),
+    })),
     total,
     page,
     limit,

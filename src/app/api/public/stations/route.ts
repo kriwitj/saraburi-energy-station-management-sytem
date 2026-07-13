@@ -30,7 +30,7 @@ export async function GET() {
       latitude: station.latitude,
       longitude: station.longitude,
       tambon: station.tambon,
-      amphoe: station.amphoe,
+      amphoe: getAmphoeLabel(station.amphoe),
       amphoe_label: getAmphoeLabel(station.amphoe),
       address_details: station.address_details || null,
       details: station.details || null,
