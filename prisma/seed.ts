@@ -20,7 +20,7 @@ const prisma = new PrismaClient({
       url: process.env.DATABASE_URL,
     },
   },
-});
+} as any);
 
 async function main() {
   console.log("🌱 Seeding database...");
