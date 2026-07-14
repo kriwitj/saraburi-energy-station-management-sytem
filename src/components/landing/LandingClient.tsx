@@ -216,7 +216,7 @@ export default function LandingClient({ initialStations, session: initialSession
         s.tambon.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (s.details && s.details.toLowerCase().includes(searchQuery.toLowerCase()));
 
-      const matchAmphoe = !selectedAmphoe || s.amphoe === selectedAmphoe;
+      const matchAmphoe = !selectedAmphoe || s.amphoe === selectedAmphoe || getAmphoeLabel(s.amphoe) === selectedAmphoe;
       const matchType = !selectedType || s.energy_types.includes(selectedType);
 
       return matchSearch && matchAmphoe && matchType;
@@ -661,16 +661,7 @@ export default function LandingClient({ initialStations, session: initialSession
                 <div className="p-4 border-b space-y-3" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-slate-400">ค้นหาสถานีพลังงาน</span>
-                    {session && session.role !== "VIEWER" && (
-                      <button
-                        onClick={startCreateStation}
-                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-white transition-all touch-target"
-                        style={{ background: "linear-gradient(135deg, #0ea5e9, #00c9a7)" }}
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        เพิ่มสถานี
-                      </button>
-                    )}
+                    {/* Add button removed */}
                   </div>
                   
                   {/* Search Input */}
@@ -823,16 +814,7 @@ export default function LandingClient({ initialStations, session: initialSession
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                     )}
-                    {session && session.role === "ADMIN" && (
-                      <DeleteConfirmDialog
-                        stationId={selectedStation.id}
-                        stationName={selectedStation.station_name}
-                        onDeleted={() => {
-                          handleSelectStation(null);
-                          refreshStations();
-                        }}
-                      />
-                    )}
+                    {/* Delete button removed */}
                   </div>
                 </div>
 
@@ -1268,16 +1250,7 @@ export default function LandingClient({ initialStations, session: initialSession
                   <div className="px-4 pb-2 border-b space-y-2" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold text-slate-400">ค้นหาสถานีบริการพลังงาน ({filteredStations.length})</span>
-                      {session && session.role !== "VIEWER" && (
-                        <button
-                          onClick={startCreateStation}
-                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-white transition-all touch-target"
-                          style={{ background: "linear-gradient(135deg, #0ea5e9, #00c9a7)" }}
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                          เพิ่มสถานี
-                        </button>
-                      )}
+                      {/* Add button removed */}
                     </div>
                     {/* Search Field */}
                     <div className="relative">
@@ -1347,16 +1320,7 @@ export default function LandingClient({ initialStations, session: initialSession
                           <Pencil className="w-4 h-4" />
                         </button>
                       )}
-                      {session && session.role === "ADMIN" && (
-                        <DeleteConfirmDialog
-                          stationId={selectedStation.id}
-                          stationName={selectedStation.station_name}
-                          onDeleted={() => {
-                            handleSelectStation(null);
-                            refreshStations();
-                          }}
-                        />
-                      )}
+                      {/* Delete button removed */}
                     </div>
                   </div>
 
