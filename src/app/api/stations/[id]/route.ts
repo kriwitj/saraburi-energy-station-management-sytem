@@ -17,7 +17,15 @@ export async function GET(
   const { id } = await params;
   const station = await prisma.station.findUnique({
     where: { id },
-    include: { brand: true, station_type: true },
+    include: {
+      brand: true,
+      station_type: true,
+      chargers: {
+        include: {
+          charger_type: true,
+        },
+      },
+    },
   });
 
   if (!station) {
@@ -61,7 +69,7 @@ export async function PUT(
 
     const prismaAmphoe = AMPHOE_MAP_TO_ENUM[parsed.data.amphoe] as Amphoe;
 
-    const { station_code, ...restData } = parsed.data;
+    const { station_code, chargers, ...restData } = parsed.data;
 
     const updateData: any = {
       ...restData,
@@ -71,15 +79,43 @@ export async function PUT(
       address_details: parsed.data.address_details || null,
       image_url: parsed.data.image_url || null,
       google_map_url: parsed.data.google_map_url || null,
+      has_ev_charger: parsed.data.has_ev_charger ?? false,
     };
 
     if (station_code && station_code.trim()) {
       updateData.station_code = station_code;
     }
 
-    const station = await prisma.station.update({
-      where: { id },
-      data: updateData,
+    const station = await prisma.$transaction(async (tx) => {
+      // Delete existing chargers
+      await tx.stationCharger.deleteMany({
+        where: { station_id: id },
+      });
+
+      // Create new chargers if needed
+      if (parsed.data.has_ev_charger && chargers && chargers.length > 0) {
+        updateData.chargers = {
+          create: chargers.map((c) => ({
+            charger_type_id: c.charger_type_id,
+            power_kw: c.power_kw,
+            plug_count: c.plug_count,
+          })),
+        };
+      }
+
+      return tx.station.update({
+        where: { id },
+        data: updateData,
+        include: {
+          brand: true,
+          station_type: true,
+          chargers: {
+            include: {
+              charger_type: true,
+            },
+          },
+        },
+      });
     });
 
     const { station_code: _, ...rest } = station;

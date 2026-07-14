@@ -23,21 +23,25 @@ export default function StationForm({ initialData, isEdit = false }: StationForm
   const [brands, setBrands] = useState<{ id: string; name: string; short_name: string; logo_url: string | null }[]>([]);
   const [energyTypes, setEnergyTypes] = useState<{ id: string; name: string; icon: string; map_color: string }[]>([]);
   const [stationTypes, setStationTypes] = useState<{ id: string; name: string; icon: string }[]>([]);
+  const [chargerTypes, setChargerTypes] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
     async function loadMetadata() {
       try {
-        const [resBrands, resEts, resSts] = await Promise.all([
+        const [resBrands, resEts, resSts, resCts] = await Promise.all([
           fetch("/api/brands"),
           fetch("/api/energy-types"),
           fetch("/api/station-types"),
+          fetch("/api/charger-types"),
         ]);
         const brandsData = await resBrands.json();
         const etsData = await resEts.json();
         const stsData = await resSts.json();
+        const ctsData = await resCts.json();
         if (brandsData.data) setBrands(brandsData.data);
         if (etsData.data) setEnergyTypes(etsData.data);
         if (stsData.data) setStationTypes(stsData.data);
+        if (ctsData.data) setChargerTypes(ctsData.data);
       } catch (err) {
         console.error("Failed to load form metadata:", err);
       }
@@ -59,17 +63,35 @@ export default function StationForm({ initialData, isEdit = false }: StationForm
     address_details: initialData?.address_details ?? "",
     image_url: initialData?.image_url ?? "",
     google_map_url: initialData?.google_map_url ?? "",
+    has_ev_charger: (initialData as any)?.has_ev_charger ?? false,
+    chargers: ((initialData as any)?.chargers as { charger_type_id: string; power_kw: number; plug_count: number }[])?.map(c => ({
+      charger_type_id: c.charger_type_id,
+      power_kw: c.power_kw,
+      plug_count: c.plug_count,
+    })) ?? ([] as { charger_type_id: string; power_kw: number; plug_count: number }[]),
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   function toggleEnergyType(type: string) {
-    setForm((f) => ({
-      ...f,
-      energy_types: f.energy_types.includes(type)
+    setForm((f) => {
+      const nextTypes = f.energy_types.includes(type)
         ? f.energy_types.filter((t) => t !== type)
-        : [...f.energy_types, type],
-    }));
+        : [...f.energy_types, type];
+      
+      const nextHasEv = type === "EV" 
+        ? !f.energy_types.includes("EV") 
+        : f.has_ev_charger;
+
+      return {
+        ...f,
+        energy_types: nextTypes,
+        has_ev_charger: nextHasEv,
+        chargers: nextHasEv && f.chargers.length === 0
+          ? [{ charger_type_id: "", power_kw: "" as any, plug_count: "" as any }]
+          : f.chargers
+      };
+    });
   }
 
   function set(key: string, value: string) {
@@ -88,6 +110,23 @@ export default function StationForm({ initialData, isEdit = false }: StationForm
     if (!form.longitude) newErrors.longitude = "กรุณากรอกลองจิจูด";
     if (!form.amphoe) newErrors.amphoe = "กรุณาเลือกอำเภอ";
     if (!form.tambon.trim()) newErrors.tambon = "กรุณากรอกตำบล";
+
+    if (form.has_ev_charger) {
+      if (form.chargers.length === 0) {
+        newErrors.chargers = "กรุณาเพิ่มข้อมูลหัวชาร์จอย่างน้อย 1 รายการ";
+      } else {
+        form.chargers.forEach((c, idx) => {
+          if (!c.charger_type_id) newErrors[`charger_${idx}_type`] = "กรุณาเลือกประเภทหัวจ่าย";
+          if (!c.power_kw || isNaN(parseFloat(c.power_kw as any)) || parseFloat(c.power_kw as any) <= 0) {
+            newErrors[`charger_${idx}_power`] = "กรุณาระบุกำลังไฟที่ถูกต้อง (>0)";
+          }
+          if (!c.plug_count || isNaN(parseInt(c.plug_count as any)) || parseInt(c.plug_count as any) <= 0) {
+            newErrors[`charger_${idx}_count`] = "กรุณาระบุจำนวนหัวชาร์จ (>0)";
+          }
+        });
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }
@@ -106,6 +145,14 @@ export default function StationForm({ initialData, isEdit = false }: StationForm
           google_map_url: form.google_map_url || undefined,
           details: form.details || undefined,
           address_details: form.address_details || undefined,
+          has_ev_charger: form.has_ev_charger,
+          chargers: form.has_ev_charger
+            ? form.chargers.map((c) => ({
+                charger_type_id: c.charger_type_id,
+                power_kw: parseFloat(c.power_kw as any),
+                plug_count: parseInt(c.plug_count as any),
+              }))
+            : [],
         };
 
         const url = isEdit ? `/api/stations/${initialData!.id}` : "/api/stations";
@@ -322,7 +369,161 @@ export default function StationForm({ initialData, isEdit = false }: StationForm
             className={`${inputClass} resize-none`}
           />
         </div>
+
+        {/* EV Charger Checkbox */}
+        <div className="flex items-center gap-2 pt-3 border-t border-slate-100">
+          <input
+            id="has_ev_charger"
+            type="checkbox"
+            checked={form.has_ev_charger}
+            onChange={(e) => {
+              const checked = e.target.checked;
+              setForm((f) => ({
+                ...f,
+                has_ev_charger: checked,
+                chargers: checked && f.chargers.length === 0
+                  ? [{ charger_type_id: "", power_kw: "" as any, plug_count: "" as any }]
+                  : f.chargers,
+              }));
+            }}
+            className="w-4 h-4 text-sky-600 border-slate-300 rounded focus:ring-sky-500"
+          />
+          <label htmlFor="has_ev_charger" className="text-sm font-bold text-slate-700 cursor-pointer">
+            🔌 มีจุดชาร์จไฟฟ้า EV ในสถานีนี้ (EV Charging Station)
+          </label>
+        </div>
       </div>
+
+      {/* Section: EV Charger Details */}
+      {form.has_ev_charger && (
+        <div className={sectionClass}>
+          <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+            <h2 className="font-bold text-slate-800 text-sm">
+              🔌 รายละเอียดหัวชาร์จไฟฟ้า EV
+            </h2>
+            <button
+              type="button"
+              onClick={() => {
+                setForm((f) => ({
+                  ...f,
+                  chargers: [...f.chargers, { charger_type_id: "", power_kw: "" as any, plug_count: "" as any }],
+                }));
+              }}
+              className="text-xs bg-sky-50 text-sky-600 hover:bg-sky-100 px-2.5 py-1.5 rounded-lg border border-sky-200 transition-all font-semibold"
+            >
+              + เพิ่มหัวชาร์จ
+            </button>
+          </div>
+
+          {errors.chargers && (
+            <p className={errorClass}>{errors.chargers}</p>
+          )}
+
+          <div className="space-y-3">
+            {form.chargers.map((c, idx) => (
+              <div key={idx} className="p-4 bg-slate-50 border border-slate-200/60 rounded-xl space-y-3 relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForm((f) => ({
+                      ...f,
+                      chargers: f.chargers.filter((_, i) => i !== idx),
+                    }));
+                  }}
+                  className="absolute top-2.5 right-2.5 text-xs text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-1.5 rounded-lg transition-all"
+                  title="ลบหัวชาร์จนี้"
+                >
+                  ✕ ลบ
+                </button>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pr-8 sm:pr-0">
+                  {/* Charger Type */}
+                  <div>
+                    <label className={labelClass} htmlFor={`charger_type_${idx}`}>
+                      ประเภทหัวจ่าย
+                    </label>
+                    <select
+                      id={`charger_type_${idx}`}
+                      value={c.charger_type_id}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setForm((f) => ({
+                          ...f,
+                          chargers: f.chargers.map((item, i) => (i === idx ? { ...item, charger_type_id: val } : item)),
+                        }));
+                      }}
+                      className={inputClass}
+                    >
+                      <option value="">เลือกประเภทหัวจ่าย</option>
+                      {chargerTypes.map((ct) => (
+                        <option key={ct.id} value={ct.id}>
+                          {ct.name}
+                        </option>
+                      ))}
+                    </select>
+                    {errors[`charger_${idx}_type`] && (
+                      <p className={errorClass}>{errors[`charger_${idx}_type`]}</p>
+                    )}
+                  </div>
+
+                  {/* Power kW */}
+                  <div>
+                    <label className={labelClass} htmlFor={`power_kw_${idx}`}>
+                      ขนาดกำลังไฟ (kW)
+                    </label>
+                    <input
+                      id={`power_kw_${idx}`}
+                      type="number"
+                      step="any"
+                      min="0"
+                      value={c.power_kw === 0 || isNaN(c.power_kw) ? "" : c.power_kw}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        setForm((f) => ({
+                          ...f,
+                          chargers: f.chargers.map((item, i) => (i === idx ? { ...item, power_kw: val } : item)),
+                        }));
+                      }}
+                      placeholder="เช่น 120"
+                      className={inputClass}
+                    />
+                    {errors[`charger_${idx}_power`] && (
+                      <p className={errorClass}>{errors[`charger_${idx}_power`]}</p>
+                    )}
+                  </div>
+
+                  {/* Plug Count */}
+                  <div>
+                    <label className={labelClass} htmlFor={`plug_count_${idx}`}>
+                      จำนวนหัวชาร์จ (หัว)
+                    </label>
+                    <input
+                      id={`plug_count_${idx}`}
+                      type="number"
+                      step="1"
+                      min="1"
+                      value={c.plug_count === 0 || isNaN(c.plug_count) ? "" : c.plug_count}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        setForm((f) => ({
+                          ...f,
+                          chargers: f.chargers.map((item, i) => (i === idx ? { ...item, plug_count: val } : item)),
+                        }));
+                      }}
+                      placeholder="เช่น 2"
+                      className={inputClass}
+                    />
+                    {errors[`charger_${idx}_count`] && (
+                      <p className={errorClass}>{errors[`charger_${idx}_count`]}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
 
       {/* Section 2: Location */}
       <div className={sectionClass}>

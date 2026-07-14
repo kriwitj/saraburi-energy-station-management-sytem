@@ -42,7 +42,15 @@ export async function GET(request: NextRequest) {
   const [stations, total] = await Promise.all([
     prisma.station.findMany({
       where,
-      include: { brand: true, station_type: true },
+      include: {
+        brand: true,
+        station_type: true,
+        chargers: {
+          include: {
+            charger_type: true,
+          },
+        },
+      },
       orderBy: { created_at: "desc" },
       skip,
       take: limit,
@@ -102,18 +110,37 @@ export async function POST(request: NextRequest) {
 
     const prismaAmphoe = AMPHOE_MAP_TO_ENUM[parsed.data.amphoe] as Amphoe;
 
-    const generatedStationCode = parsed.data.station_code || `ST-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+    const { chargers, ...stationData } = parsed.data;
+
+    const generatedStationCode = stationData.station_code || `ST-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
 
     const station = await prisma.station.create({
       data: {
-        ...parsed.data,
+        ...stationData,
         station_code: generatedStationCode,
         amphoe: prismaAmphoe,
-        energy_types: parsed.data.energy_types as string[],
-        details: parsed.data.details || null,
-        address_details: parsed.data.address_details || null,
-        image_url: parsed.data.image_url || null,
-        google_map_url: parsed.data.google_map_url || null,
+        energy_types: stationData.energy_types as string[],
+        details: stationData.details || null,
+        address_details: stationData.address_details || null,
+        image_url: stationData.image_url || null,
+        google_map_url: stationData.google_map_url || null,
+        has_ev_charger: stationData.has_ev_charger ?? false,
+        chargers: stationData.has_ev_charger && chargers && chargers.length > 0
+          ? {
+              create: chargers.map((c) => ({
+                charger_type_id: c.charger_type_id,
+                power_kw: c.power_kw,
+                plug_count: c.plug_count,
+              })),
+            }
+          : undefined,
+      },
+      include: {
+        chargers: {
+          include: {
+            charger_type: true,
+          },
+        },
       },
     });
 

@@ -7,7 +7,15 @@ import { getAmphoeLabel } from "@/lib/constants";
 export async function GET() {
   try {
     const stations = await prisma.station.findMany({
-      include: { brand: true, station_type: true },
+      include: {
+        brand: true,
+        station_type: true,
+        chargers: {
+          include: {
+            charger_type: true,
+          },
+        },
+      },
       orderBy: { created_at: "desc" },
     });
 
@@ -34,6 +42,12 @@ export async function GET() {
       address_details: station.address_details || null,
       details: station.details || null,
       image_url: station.image_url || null,
+      has_ev_charger: station.has_ev_charger,
+      chargers: station.chargers.map((c) => ({
+        charger_type: c.charger_type.name,
+        power_kw: c.power_kw,
+        plug_count: c.plug_count,
+      })),
       created_at: station.created_at.toISOString(),
       updated_at: station.updated_at.toISOString(),
     }));

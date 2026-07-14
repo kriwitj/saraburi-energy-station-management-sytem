@@ -28,7 +28,13 @@ interface EnergyType {
   show_icon: boolean;
 }
 
-type TabType = "station-types" | "brands" | "energy-types";
+type TabType = "station-types" | "brands" | "energy-types" | "charger-types";
+
+interface ChargerType {
+  id: string;
+  name: string;
+  _count?: { chargers: number };
+}
 
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState<TabType>("station-types");
@@ -67,6 +73,16 @@ export default function AdminSettingsPage() {
   const [editEtId, setEditEtId] = useState<string | null>(null);
   const [etForm, setEtForm] = useState({ id: "", name: "", icon: "", map_color: "#3B82F6", show_icon: true });
   const [etErrors, setEtErrors] = useState<Record<string, string>>({});
+
+  // ==========================================
+  // STATE: Charger Types
+  // ==========================================
+  const [chargerTypes, setChargerTypes] = useState<ChargerType[]>([]);
+  const [loadingChargerTypes, setLoadingChargerTypes] = useState(true);
+  const [showCtForm, setShowCtForm] = useState(false);
+  const [editCtId, setEditCtId] = useState<string | null>(null);
+  const [ctForm, setCtForm] = useState({ name: "" });
+  const [ctErrors, setCtErrors] = useState<Record<string, string>>({});
 
   // ==========================================
   // FETCH FUNCTIONS
@@ -110,10 +126,24 @@ export default function AdminSettingsPage() {
     }
   }
 
+  async function fetchChargerTypes() {
+    setLoadingChargerTypes(true);
+    try {
+      const res = await fetch("/api/charger-types");
+      const data = await res.json();
+      setChargerTypes(data.data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingChargerTypes(false);
+    }
+  }
+
   useEffect(() => {
     fetchStationTypes();
     fetchBrands();
     fetchEnergyTypes();
+    fetchChargerTypes();
   }, []);
 
   // ==========================================
@@ -351,6 +381,69 @@ export default function AdminSettingsPage() {
     fetchEnergyTypes();
   }
 
+  // ==========================================
+  // CRUD Handlers: Charger Types
+  // ==========================================
+  function resetCtForm() {
+    setCtForm({ name: "" });
+    setEditCtId(null);
+    setCtErrors({});
+  }
+
+  function validateCt() {
+    const e: Record<string, string> = {};
+    if (!ctForm.name.trim()) e.name = "กรุณาระบุชื่อประเภทหัวจ่าย";
+    setCtErrors(e);
+    return Object.keys(e).length === 0;
+  }
+
+  function handleSaveCt(e: React.FormEvent) {
+    e.preventDefault();
+    if (!validateCt()) return;
+
+    startTransition(async () => {
+      if (editCtId) {
+        // PUT
+        const res = await fetch(`/api/charger-types/${editCtId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: ctForm.name }),
+        });
+        const data = await res.json();
+        if (!res.ok) { toast.error(data.error); return; }
+        toast.success("แก้ไขประเภทหัวจ่ายสำเร็จ!");
+      } else {
+        // POST
+        const res = await fetch("/api/charger-types", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: ctForm.name }),
+        });
+        const data = await res.json();
+        if (!res.ok) { toast.error(data.error); return; }
+        toast.success("เพิ่มประเภทหัวจ่ายสำเร็จ!");
+      }
+      setShowCtForm(false);
+      resetCtForm();
+      fetchChargerTypes();
+    });
+  }
+
+  function handleEditCt(ct: ChargerType) {
+    setEditCtId(ct.id);
+    setCtForm({ name: ct.name });
+    setShowCtForm(true);
+  }
+
+  async function handleDeleteCt(id: string, name: string) {
+    if (!confirm(`ลบประเภทหัวจ่าย "${name}" ใช่หรือไม่?`)) return;
+    const res = await fetch(`/api/charger-types/${id}`, { method: "DELETE" });
+    const data = await res.json();
+    if (!res.ok) { toast.error(data.error); return; }
+    toast.success("ลบประเภทหัวจ่ายสำเร็จ");
+    fetchChargerTypes();
+  }
+
   return (
     <div className="p-4 lg:p-6 space-y-6 max-w-5xl mx-auto">
       {/* Title & Info */}
@@ -368,6 +461,7 @@ export default function AdminSettingsPage() {
               if (activeTab === "station-types") fetchStationTypes();
               if (activeTab === "brands") fetchBrands();
               if (activeTab === "energy-types") fetchEnergyTypes();
+              if (activeTab === "charger-types") fetchChargerTypes();
             }}
             className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-slate-800 hover:bg-slate-50 transition-all shadow-sm"
           >
@@ -408,6 +502,16 @@ export default function AdminSettingsPage() {
           }`}
         >
           ⚡ ประเภทพลังงาน ({energyTypes.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("charger-types")}
+          className={`flex-1 sm:flex-initial px-5 py-3 text-xs sm:text-sm font-bold border-b-2 transition-all ${
+            activeTab === "charger-types"
+              ? "border-sky-500 text-sky-600 bg-white"
+              : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/50"
+          }`}
+        >
+          🔌 ประเภทหัวจ่าย ({chargerTypes.length})
         </button>
       </div>
 
@@ -885,6 +989,102 @@ export default function AdminSettingsPage() {
         </div>
       )}
 
+      {/* TAB CONTENT: CHARGER TYPES */}
+      {activeTab === "charger-types" && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-slate-700">รายการประเภทหัวจ่าย EV</h2>
+            <button
+              onClick={() => { resetCtForm(); setShowCtForm((v) => !v); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white shadow-sm transition-all"
+              style={{ background: "linear-gradient(135deg, #0ea5e9, #00c9a7)" }}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              เพิ่มประเภทหัวจ่าย
+            </button>
+          </div>
+
+          {showCtForm && (
+            <form onSubmit={handleSaveCt} className="bg-white border border-slate-200 shadow-sm p-4 rounded-xl space-y-3">
+              <h3 className="font-bold text-slate-800 text-xs border-b pb-1.5">
+                {editCtId ? "แก้ไขประเภทหัวจ่าย" : "สร้างประเภทหัวจ่ายใหม่"}
+              </h3>
+              <div className="grid grid-cols-1 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold mb-1 text-slate-500">ชื่อประเภทหัวจ่าย (เช่น CCS2, AC Type 2, CHAdeMO)</label>
+                  <input
+                    type="text"
+                    value={ctForm.name}
+                    onChange={(e) => setCtForm({ name: e.target.value })}
+                    className={inputClass}
+                    placeholder="เช่น CCS2"
+                  />
+                  {ctErrors.name && <p className="text-[10px] mt-0.5 text-red-500">{ctErrors.name}</p>}
+                </div>
+              </div>
+              <div className="flex gap-2 justify-end pt-1">
+                <button
+                  type="button"
+                  onClick={() => { setShowCtForm(false); resetCtForm(); }}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-50 text-slate-500 border hover:bg-slate-100"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="px-4 py-1.5 rounded-lg text-xs font-bold text-white shadow-sm"
+                  style={{ background: "linear-gradient(135deg, #0ea5e9, #00c9a7)" }}
+                >
+                  {isPending ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
+                </button>
+              </div>
+            </form>
+          )}
+
+          <div className="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
+            {loadingChargerTypes ? (
+              <div className="p-8 text-center text-slate-400 text-xs">กำลังโหลด...</div>
+            ) : chargerTypes.length === 0 ? (
+              <div className="p-8 text-center text-slate-400 text-xs">ยังไม่มีข้อมูลประเภทหัวจ่าย</div>
+            ) : (
+              <table className="w-full text-left border-collapse text-slate-600">
+                <thead>
+                  <tr className="bg-slate-50 text-[10px] font-bold uppercase text-slate-500 border-b">
+                    <th className="p-3">ชื่อประเภทหัวจ่าย</th>
+                    <th className="p-3 text-right">การจัดการ</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs">
+                  {chargerTypes.map((ct) => (
+                    <tr key={ct.id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="p-3">
+                        <p className="font-bold text-slate-800">{ct.name}</p>
+                        <span className="inline-block mt-0.5 text-[9px] font-mono text-slate-400">ID: {ct.id}</span>
+                      </td>
+                      <td className="p-3 text-right space-x-1.5">
+                        <button
+                          onClick={() => handleEditCt(ct)}
+                          className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-all border border-transparent hover:border-slate-200"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCt(ct.id, ct.name)}
+                          className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-600 transition-all border border-transparent hover:border-red-100"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Helper Box */}
       <div className="bg-sky-50 border border-sky-200 rounded-xl p-4 text-xs text-sky-700 space-y-1.5 shadow-sm">
         <p className="font-bold flex items-center gap-1">
@@ -894,6 +1094,7 @@ export default function AdminSettingsPage() {
         <p>• <strong>ประเภทสถานี:</strong> ใช้แยกประเภทของสถานีภาพรวม เช่น ปั๊มน้ำมันทั่วไป หรือ ศูนย์ชาร์จ EV ล้วน</p>
         <p>• <strong>แบรนด์สถานี:</strong> แบรนด์ผู้ดูแล เช่น ปตท., บางจาก, เชลล์, พีที, คาลเท็กซ์ ซึ่งสามารถอัปโหลดโลโก้เพื่อนำไปจัดแสดงในแผนที่และข้อมูลทั่วไปได้</p>
         <p>• <strong>ประเภทพลังงาน:</strong> บริการพลังงานทางเลือกที่มีในปั๊ม (ใน 1 สถานีบริการสามารถเลือกพลังงานได้มากกว่า 1 ประเภท เช่น มีทั้งน้ำมันดีเซล แก๊ส LPG และตู้อัดประจุไฟฟ้า EV ร่วมกัน)</p>
+        <p>• <strong>ประเภทหัวจ่าย:</strong> กำหนดตัวเลือกของหัวชาร์จสำหรับตู้ชาร์จ EV (เช่น CCS2, CHAdeMO, AC Type 2) เพื่อบันทึกข้อมูลรายละเอียดตู้ชาร์จในสถานีนั้น ๆ</p>
       </div>
     </div>
   );

@@ -57,6 +57,17 @@ export const stationSchema = z.object({
   address_details: z.string().optional(),
   image_url: z.string().url("URL รูปภาพไม่ถูกต้อง").optional().or(z.literal("")).or(z.null()),
   google_map_url: z.string().url("รูปแบบ URL ไม่ถูกต้อง").optional().or(z.literal("")).or(z.null()),
+  has_ev_charger: z.boolean().optional().default(false),
+  chargers: z
+    .array(
+      z.object({
+        charger_type_id: z.string().min(1, "กรุณาเลือกประเภทหัวจ่าย"),
+        power_kw: z.number({ error: "กรุณาระบุกำลังไฟ" }).min(0.1, "กำลังไฟต้องมากกว่า 0"),
+        plug_count: z.number({ error: "กรุณาระบุจำนวนหัว" }).int().min(1, "จำนวนต้องอย่างน้อย 1"),
+      })
+    )
+    .optional()
+    .default([]),
 });
 
 export type StationFormData = z.infer<typeof stationSchema>;

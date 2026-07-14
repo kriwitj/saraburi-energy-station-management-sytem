@@ -88,11 +88,37 @@ model Station {
   address_details   String?     @db.Text
   image_url         String?
   google_map_url    String?
+  has_ev_charger    Boolean          @default(false)
+  chargers          StationCharger[]
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
   @@map("stations")
+}
+
+model ChargerType {
+  id         String           @id @default(uuid())
+  name       String           @unique // e.g. "CCS2", "AC Type 2", "CHAdeMO"
+  chargers   StationCharger[]
+  created_at DateTime         @default(now())
+  updated_at DateTime         @updatedAt
+
+  @@map("charger_types")
+}
+
+model StationCharger {
+  id              String      @id @default(uuid())
+  station_id      String
+  station         Station     @relation(fields: [station_id], references: [id], onDelete: Cascade)
+  charger_type_id String
+  charger_type    ChargerType @relation(fields: [charger_type_id], references: [id], onDelete: Restrict)
+  power_kw        Float       // ขนาดกำลังไฟหัวจ่าย (kW) เช่น 50, 120, 150
+  plug_count      Int         // จำนวนหัวชาร์จ เช่น 2, 4
+  created_at      DateTime    @default(now())
+  updated_at      DateTime    @updatedAt
+
+  @@map("station_chargers")
 }
 
 model User {
@@ -107,3 +133,4 @@ model User {
 
   @@map("users")
 }
+
