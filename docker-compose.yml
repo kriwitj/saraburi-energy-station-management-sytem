@@ -53,14 +53,14 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy_net"
       # Router for MinIO API (S3)
-      - "traefik.http.routers.saraburi-minio-api.rule=Host(`${MINIO_S3_DOMAIN:-s3.energy.saraburidev.org}`)"
+      - "traefik.http.routers.saraburi-minio-api.rule=Host(`${MINIO_S3_DOMAIN:-s3-energy.saraburidev.org}`)"
       - "traefik.http.routers.saraburi-minio-api.entrypoints=websecure"
       - "traefik.http.routers.saraburi-minio-api.tls=true"
       - "traefik.http.routers.saraburi-minio-api.tls.certresolver=letsencrypt"
       - "traefik.http.routers.saraburi-minio-api.service=saraburi-minio-api-service"
       - "traefik.http.services.saraburi-minio-api-service.loadbalancer.server.port=9000"
       # Router for MinIO Console
-      - "traefik.http.routers.saraburi-minio-console.rule=Host(`${MINIO_CONSOLE_DOMAIN:-console.energy.saraburidev.org}`)"
+      - "traefik.http.routers.saraburi-minio-console.rule=Host(`${MINIO_CONSOLE_DOMAIN:-console-energy.saraburidev.org}`)"
       - "traefik.http.routers.saraburi-minio-console.entrypoints=websecure"
       - "traefik.http.routers.saraburi-minio-console.tls=true"
       - "traefik.http.routers.saraburi-minio-console.tls.certresolver=letsencrypt"
@@ -110,7 +110,7 @@ services:
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin123
       MINIO_BUCKET_NAME: station-images
-      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-https://s3.energy.saraburidev.org}
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-https://s3-energy.saraburidev.org}
       NEXTAUTH_URL: ${NEXTAUTH_URL:-https://energy.saraburidev.org}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-please-change-this-secret-in-production}
       NODE_ENV: production

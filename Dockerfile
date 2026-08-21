@@ -8,6 +8,15 @@ COPY package.json package-lock.json ./
 RUN npm ci --frozen-lockfile
 
 # ==============================
+# Stage 1b: Install production-only dependencies (for runtime, e.g. prisma CLI)
+# ==============================
+FROM node:22-alpine AS prod-deps
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --frozen-lockfile
+
+# ==============================
 # Stage 2: Build Next.js app
 # ==============================
 FROM node:22-alpine AS builder
@@ -45,7 +54,7 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules ./node_modules
+COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=builder /app/prisma.config.js ./prisma.config.js
 COPY --from=builder /app/package.json ./package.json
 
