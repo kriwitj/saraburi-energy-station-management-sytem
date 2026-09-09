@@ -52,7 +52,7 @@ export default function StationForm({ initialData, isEdit = false }: StationForm
   const [form, setForm] = useState({
     station_code: initialData?.station_code ?? "",
     station_name: initialData?.station_name ?? "",
-    station_type_id: (initialData as unknown as { station_type_id?: string })?.station_type_id ?? "STATION",
+    station_type_id: initialData?.station_type_id ?? "STATION",
     brand_id: initialData?.brand_id ?? "",
     energy_types: (initialData?.energy_types ?? []) as string[],
     details: initialData?.details ?? "",
@@ -63,8 +63,8 @@ export default function StationForm({ initialData, isEdit = false }: StationForm
     address_details: initialData?.address_details ?? "",
     image_url: initialData?.image_url ?? "",
     google_map_url: initialData?.google_map_url ?? "",
-    has_ev_charger: (initialData as any)?.has_ev_charger ?? false,
-    chargers: ((initialData as any)?.chargers as { charger_type_id: string; power_kw: number; plug_count: number }[])?.map(c => ({
+    has_ev_charger: initialData?.has_ev_charger ?? false,
+    chargers: initialData?.chargers?.map(c => ({
       charger_type_id: c.charger_type_id,
       power_kw: c.power_kw,
       plug_count: c.plug_count,
