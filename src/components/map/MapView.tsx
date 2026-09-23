@@ -11,6 +11,7 @@ import {
   ENERGY_TYPE_CONFIG,
   getAmphoeLabel,
   type EnergyTypeKey,
+  CARTO_BASEMAP_URL,
 } from "@/lib/constants";
 import type { Amphoe } from "@prisma/client";
 
@@ -134,10 +135,10 @@ export default function MapView({
         wheelPxPerZoomLevel: 150,
       });
 
-      L.tileLayer(
-        "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-        { maxZoom: 19 }
-      ).addTo(map);
+      L.tileLayer(CARTO_BASEMAP_URL, {
+        maxZoom: 19,
+        subdomains: "abcd",
+      }).addTo(map);
 
       // Add zoom control at bottomright (Google Maps style)
       L.control.zoom({ position: "bottomright" }).addTo(map);

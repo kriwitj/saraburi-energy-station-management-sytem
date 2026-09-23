@@ -2,6 +2,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  eslint: {
+    // Skip ESLint scanning during production builds to significantly speed up Docker builds
+    ignoreDuringBuilds: true,
+  },
   images: {
     remotePatterns: [
       {

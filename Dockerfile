@@ -5,7 +5,7 @@ FROM node:22-alpine AS deps
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci --frozen-lockfile
+RUN --mount=type=cache,target=/root/.npm npm ci --frozen-lockfile
 
 # ==============================
 # Stage 2: Build Next.js app
@@ -13,15 +13,22 @@ RUN npm ci --frozen-lockfile
 FROM deps AS builder
 WORKDIR /app
 
-COPY . .
-
-# Generate Prisma client
+# 1. Copy prisma schema first for better caching
+# (Changes to source code won't invalidate prisma generate)
+COPY prisma ./prisma
 RUN npx prisma generate
 
+# 2. Copy the rest of the application code
+COPY . .
+
 # Build Next.js (creates .next/standalone with a self-contained node_modules)
+ARG NEXT_PUBLIC_CARTO_API_KEY
+ENV NEXT_PUBLIC_CARTO_API_KEY=$NEXT_PUBLIC_CARTO_API_KEY
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
-RUN npm run build
+
+# Mount .next/cache for incremental compilation across Docker rebuilds
+RUN --mount=type=cache,target=/app/.next/cache npm run build
 
 # ==============================
 # Stage 3: Production runtime

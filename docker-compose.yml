@@ -94,6 +94,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_CARTO_API_KEY: ${NEXT_PUBLIC_CARTO_API_KEY:-}
     container_name: saraburi_charger_nextjs
     restart: unless-stopped
     depends_on:
@@ -113,6 +115,7 @@ services:
       MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-https://s3-energy.saraburidev.org}
       NEXTAUTH_URL: ${NEXTAUTH_URL:-https://energy.saraburidev.org}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-please-change-this-secret-in-production}
+      NEXT_PUBLIC_CARTO_API_KEY: ${NEXT_PUBLIC_CARTO_API_KEY:-}
       NODE_ENV: production
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health || exit 1"]

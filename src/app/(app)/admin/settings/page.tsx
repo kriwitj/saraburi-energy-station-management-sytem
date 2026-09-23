@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Plus, Trash2, Pencil, RefreshCw, Save, X, Upload, Image as ImageIcon, Palette, Settings } from "lucide-react";
+import { Plus, Trash2, Pencil, RefreshCw, X, Upload, Image as ImageIcon, Palette, Settings } from "lucide-react";
 
 interface StationType {
   id: string;
@@ -41,7 +41,7 @@ export default function AdminSettingsPage() {
   const [isPending, startTransition] = useTransition();
 
   // General inputs style class
-  const inputClass = "w-full px-3 py-2 text-sm bg-white border border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/10 rounded-xl transition-all shadow-sm";
+  const inputClass = "w-full px-3.5 py-2.5 text-sm bg-white border border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/10 rounded-xl transition-all shadow-sm";
 
   // ==========================================
   // STATE: Station Types
@@ -197,7 +197,6 @@ export default function AdminSettingsPage() {
     });
   }
 
-  // Edit St
   function handleEditSt(st: StationType) {
     setEditStId(st.id);
     setStForm({ id: st.id, name: st.name, icon: st.icon, description: st.description || "" });
@@ -316,7 +315,6 @@ export default function AdminSettingsPage() {
     setEtErrors({});
   }
 
-  // Validate Et
   function validateEt() {
     const e: Record<string, string> = {};
     if (!editEtId && !etForm.id) e.id = "กรุณาระบุ ID";
@@ -515,93 +513,22 @@ export default function AdminSettingsPage() {
         </button>
       </div>
 
-      {/* TAB CONTENT: STATION TYPES */}
+      {/* ==========================================
+          TAB 1: STATION TYPES
+         ========================================== */}
       {activeTab === "station-types" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-700">รายการประเภทสถานี</h2>
             <button
-              onClick={() => { resetStForm(); setShowStForm((v) => !v); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white shadow-sm transition-all"
+              onClick={() => { resetStForm(); setShowStForm(true); }}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-white shadow-sm hover:shadow transition-all"
               style={{ background: "linear-gradient(135deg, #0ea5e9, #00c9a7)" }}
             >
               <Plus className="w-3.5 h-3.5" />
               เพิ่มประเภทสถานี
             </button>
           </div>
-
-          {showStForm && (
-            <form onSubmit={handleSaveSt} className="bg-white border border-slate-200 shadow-sm p-4 rounded-xl space-y-3">
-              <h3 className="font-bold text-slate-800 text-xs border-b pb-1.5">
-                {editStId ? `แก้ไขประเภทสถานี: ${editStId}` : "สร้างประเภทสถานีใหม่"}
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {!editStId && (
-                  <div>
-                    <label className="block text-[10px] font-bold mb-1 text-slate-500">ID (ตัวพิมพ์ใหญ่ เช่น CHARGING_HUB)</label>
-                    <input
-                      type="text"
-                      value={stForm.id}
-                      onChange={(e) => setStForm(f => ({ ...f, id: e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, "") }))}
-                      className={inputClass}
-                      placeholder="CHARGING_HUB"
-                    />
-                    {stErrors.id && <p className="text-[10px] mt-0.5 text-red-500">{stErrors.id}</p>}
-                  </div>
-                )}
-                <div>
-                  <label className="block text-[10px] font-bold mb-1 text-slate-500">ชื่อประเภท</label>
-                  <input
-                    type="text"
-                    value={stForm.name}
-                    onChange={(e) => setStForm(f => ({ ...f, name: e.target.value }))}
-                    className={inputClass}
-                    placeholder="ศูนย์ชาร์จรถยนต์ไฟฟ้า"
-                  />
-                  {stErrors.name && <p className="text-[10px] mt-0.5 text-red-500">{stErrors.name}</p>}
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold mb-1 text-slate-500">ไอคอน (Emoji/อักษรย่อ)</label>
-                  <input
-                    type="text"
-                    value={stForm.icon}
-                    onChange={(e) => setStForm(f => ({ ...f, icon: e.target.value }))}
-                    className={`${inputClass} text-lg`}
-                    placeholder="🔌"
-                    maxLength={2}
-                  />
-                  {stErrors.icon && <p className="text-[10px] mt-0.5 text-red-500">{stErrors.icon}</p>}
-                </div>
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold mb-1 text-slate-500">คำอธิบาย</label>
-                <input
-                  type="text"
-                  value={stForm.description}
-                  onChange={(e) => setStForm(f => ({ ...f, description: e.target.value }))}
-                  className={inputClass}
-                  placeholder="รายละเอียดสำหรับกลุ่มสถานีนี้"
-                />
-              </div>
-              <div className="flex gap-2 justify-end pt-1">
-                <button
-                  type="button"
-                  onClick={() => { setShowStForm(false); resetStForm(); }}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-50 text-slate-500 border hover:bg-slate-100"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  type="submit"
-                  disabled={isPending}
-                  className="px-4 py-1.5 rounded-lg text-xs font-bold text-white shadow-sm"
-                  style={{ background: "linear-gradient(135deg, #0ea5e9, #00c9a7)" }}
-                >
-                  {isPending ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
-                </button>
-              </div>
-            </form>
-          )}
 
           <div className="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
             {loadingStationTypes ? (
@@ -633,12 +560,14 @@ export default function AdminSettingsPage() {
                         <button
                           onClick={() => handleEditSt(st)}
                           className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-all border border-transparent hover:border-slate-200"
+                          title="แก้ไข"
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => handleDeleteSt(st.id, st.name)}
                           className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-600 transition-all border border-transparent hover:border-red-100"
+                          title="ลบ"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -652,107 +581,22 @@ export default function AdminSettingsPage() {
         </div>
       )}
 
-      {/* TAB CONTENT: BRANDS */}
+      {/* ==========================================
+          TAB 2: BRANDS
+         ========================================== */}
       {activeTab === "brands" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-700">รายการแบรนด์สถานี</h2>
             <button
-              onClick={() => { resetBrandForm(); setShowBrandForm((v) => !v); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white shadow-sm transition-all"
+              onClick={() => { resetBrandForm(); setShowBrandForm(true); }}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-white shadow-sm hover:shadow transition-all"
               style={{ background: "linear-gradient(135deg, #0ea5e9, #00c9a7)" }}
             >
               <Plus className="w-3.5 h-3.5" />
               เพิ่มแบรนด์ใหม่
             </button>
           </div>
-
-          {showBrandForm && (
-            <form onSubmit={handleSaveBrand} className="bg-white border border-slate-200 shadow-sm p-4 rounded-xl space-y-3">
-              <h3 className="font-bold text-slate-800 text-xs border-b pb-1.5">
-                {editBrandId ? "แก้ไขข้อมูลแบรนด์" : "เพิ่มแบรนด์ผู้ให้บริการใหม่"}
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-[10px] font-bold mb-1 text-slate-500">ชื่อแบรนด์เต็ม (เช่น ปตท.)</label>
-                    <input
-                      type="text"
-                      value={brandForm.name}
-                      onChange={(e) => setBrandForm(f => ({ ...f, name: e.target.value }))}
-                      className={inputClass}
-                      placeholder="ปตท."
-                    />
-                    {brandErrors.name && <p className="text-[10px] mt-0.5 text-red-500">{brandErrors.name}</p>}
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold mb-1 text-slate-500">ชื่อย่อ/รหัสแบรนด์ (เช่น PTT)</label>
-                    <input
-                      type="text"
-                      value={brandForm.short_name}
-                      onChange={(e) => setBrandForm(f => ({ ...f, short_name: e.target.value }))}
-                      className={inputClass}
-                      placeholder="PTT"
-                    />
-                    {brandErrors.short_name && <p className="text-[10px] mt-0.5 text-red-500">{brandErrors.short_name}</p>}
-                  </div>
-                </div>
-
-                {/* Brand Logo Upload Section */}
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col justify-between">
-                  <div className="text-center">
-                    <p className="text-[10px] font-bold text-slate-500 mb-2">อัปโหลดโลโก้แบรนด์</p>
-                    <div className="w-16 h-16 mx-auto bg-white border border-slate-200 rounded-xl flex items-center justify-center overflow-hidden shadow-sm">
-                      {brandForm.logo_url ? (
-                        <img src={brandForm.logo_url} alt="Brand Logo Preview" className="w-full h-full object-contain" />
-                      ) : (
-                        <ImageIcon className="w-6 h-6 text-slate-300" />
-                      )}
-                    </div>
-                  </div>
-                  <div className="mt-3">
-                    <label className="flex items-center justify-center gap-1.5 w-full py-2 border border-dashed border-sky-300 hover:border-sky-500 bg-sky-50/50 hover:bg-sky-50 text-sky-600 hover:text-sky-700 text-xs font-semibold rounded-xl cursor-pointer transition-all">
-                      <Upload className="w-3.5 h-3.5" />
-                      {uploadingLogo ? "กำลังอัปโหลด..." : "อัปโหลดรูปภาพ"}
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleLogoUpload}
-                        className="hidden"
-                        disabled={uploadingLogo}
-                      />
-                    </label>
-                    {brandForm.logo_url && (
-                      <button
-                        type="button"
-                        onClick={() => setBrandForm(f => ({ ...f, logo_url: "" }))}
-                        className="mt-1.5 w-full text-center text-[10px] text-red-500 hover:underline"
-                      >
-                        ลบภาพโลโก้
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="flex gap-2 justify-end pt-1">
-                <button
-                  type="button"
-                  onClick={() => { setShowBrandForm(false); resetBrandForm(); }}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-50 text-slate-500 border hover:bg-slate-100"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  type="submit"
-                  disabled={isPending || uploadingLogo}
-                  className="px-4 py-1.5 rounded-lg text-xs font-bold text-white shadow-sm"
-                  style={{ background: "linear-gradient(135deg, #0ea5e9, #00c9a7)" }}
-                >
-                  {isPending ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
-                </button>
-              </div>
-            </form>
-          )}
 
           <div className="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
             {loadingBrands ? (
@@ -794,12 +638,14 @@ export default function AdminSettingsPage() {
                         <button
                           onClick={() => handleEditBrand(b)}
                           className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-all border border-transparent hover:border-slate-200"
+                          title="แก้ไข"
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => handleDeleteBrand(b.id, b.name)}
                           className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-600 transition-all border border-transparent hover:border-red-100"
+                          title="ลบ"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -813,114 +659,22 @@ export default function AdminSettingsPage() {
         </div>
       )}
 
-      {/* TAB CONTENT: ENERGY TYPES */}
+      {/* ==========================================
+          TAB 3: ENERGY TYPES
+         ========================================== */}
       {activeTab === "energy-types" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-700">รายการประเภทพลังงาน/เชื้อเพลิง</h2>
             <button
-              onClick={() => { resetEtForm(); setShowEtForm((v) => !v); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white shadow-sm transition-all"
+              onClick={() => { resetEtForm(); setShowEtForm(true); }}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-white shadow-sm hover:shadow transition-all"
               style={{ background: "linear-gradient(135deg, #0ea5e9, #00c9a7)" }}
             >
               <Plus className="w-3.5 h-3.5" />
               เพิ่มประเภทพลังงาน
             </button>
           </div>
-
-          {showEtForm && (
-            <form onSubmit={handleSaveEt} className="bg-white border border-slate-200 shadow-sm p-4 rounded-xl space-y-3">
-              <h3 className="font-bold text-slate-800 text-xs border-b pb-1.5">
-                {editEtId ? `แก้ไขพลังงาน: ${editEtId}` : "สร้างประเภทพลังงานใหม่"}
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                {!editEtId && (
-                  <div>
-                    <label className="block text-[10px] font-bold mb-1 text-slate-500">ID (ตัวย่อ/สัญลักษณ์ เช่น EV)</label>
-                    <input
-                      type="text"
-                      value={etForm.id}
-                      onChange={(e) => setEtForm(f => ({ ...f, id: e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, "") }))}
-                      className={inputClass}
-                      placeholder="EV"
-                    />
-                    {etErrors.id && <p className="text-[10px] mt-0.5 text-red-500">{etErrors.id}</p>}
-                  </div>
-                )}
-                <div>
-                  <label className="block text-[10px] font-bold mb-1 text-slate-500">ชื่อพลังงาน (เช่น รถยนต์ไฟฟ้า)</label>
-                  <input
-                    type="text"
-                    value={etForm.name}
-                    onChange={(e) => setEtForm(f => ({ ...f, name: e.target.value }))}
-                    className={inputClass}
-                    placeholder="รถยนต์ไฟฟ้า"
-                  />
-                  {etErrors.name && <p className="text-[10px] mt-0.5 text-red-500">{etErrors.name}</p>}
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold mb-1 text-slate-500">ไอคอน (Emoji)</label>
-                  <input
-                    type="text"
-                    value={etForm.icon}
-                    onChange={(e) => setEtForm(f => ({ ...f, icon: e.target.value }))}
-                    className={`${inputClass} text-lg`}
-                    placeholder="🔌"
-                    maxLength={2}
-                  />
-                  {etErrors.icon && <p className="text-[10px] mt-0.5 text-red-500">{etErrors.icon}</p>}
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold mb-1 text-slate-500">สีของมาร์กเกอร์บนแผนที่</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="color"
-                      value={etForm.map_color}
-                      onChange={(e) => setEtForm(f => ({ ...f, map_color: e.target.value }))}
-                      className="w-10 h-10 border rounded-xl cursor-pointer p-0.5"
-                    />
-                    <input
-                      type="text"
-                      value={etForm.map_color}
-                      onChange={(e) => setEtForm(f => ({ ...f, map_color: e.target.value }))}
-                      className={inputClass}
-                      placeholder="#3B82F6"
-                    />
-                  </div>
-                  {etErrors.map_color && <p className="text-[10px] mt-0.5 text-red-500">{etErrors.map_color}</p>}
-                </div>
-              </div>
-              <div className="flex items-center gap-2 pt-1">
-                <input
-                  id="etForm-show-icon"
-                  type="checkbox"
-                  checked={etForm.show_icon}
-                  onChange={(e) => setEtForm(f => ({ ...f, show_icon: e.target.checked }))}
-                  className="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
-                />
-                <label htmlFor="etForm-show-icon" className="text-xs font-bold text-slate-600 select-none cursor-pointer">
-                  แสดงสัญลักษณ์ข้างในจุดตำแหน่งบนแผนที่ (ถ้าไม่ได้ติ๊กจะแสดงเป็นจุดวงกลมสีธรรมดา)
-                </label>
-              </div>
-              <div className="flex gap-2 justify-end pt-1">
-                <button
-                  type="button"
-                  onClick={() => { setShowEtForm(false); resetEtForm(); }}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-50 text-slate-500 border hover:bg-slate-100"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  type="submit"
-                  disabled={isPending}
-                  className="px-4 py-1.5 rounded-lg text-xs font-bold text-white shadow-sm"
-                  style={{ background: "linear-gradient(135deg, #0ea5e9, #00c9a7)" }}
-                >
-                  {isPending ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
-                </button>
-              </div>
-            </form>
-          )}
 
           <div className="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
             {loadingEnergyTypes ? (
@@ -970,12 +724,14 @@ export default function AdminSettingsPage() {
                         <button
                           onClick={() => handleEditEt(et)}
                           className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-all border border-transparent hover:border-slate-200"
+                          title="แก้ไข"
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => handleDeleteEt(et.id, et.name)}
                           className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-600 transition-all border border-transparent hover:border-red-100"
+                          title="ลบ"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -989,58 +745,22 @@ export default function AdminSettingsPage() {
         </div>
       )}
 
-      {/* TAB CONTENT: CHARGER TYPES */}
+      {/* ==========================================
+          TAB 4: CHARGER TYPES
+         ========================================== */}
       {activeTab === "charger-types" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-700">รายการประเภทหัวจ่าย EV</h2>
             <button
-              onClick={() => { resetCtForm(); setShowCtForm((v) => !v); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white shadow-sm transition-all"
+              onClick={() => { resetCtForm(); setShowCtForm(true); }}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-white shadow-sm hover:shadow transition-all"
               style={{ background: "linear-gradient(135deg, #0ea5e9, #00c9a7)" }}
             >
               <Plus className="w-3.5 h-3.5" />
               เพิ่มประเภทหัวจ่าย
             </button>
           </div>
-
-          {showCtForm && (
-            <form onSubmit={handleSaveCt} className="bg-white border border-slate-200 shadow-sm p-4 rounded-xl space-y-3">
-              <h3 className="font-bold text-slate-800 text-xs border-b pb-1.5">
-                {editCtId ? "แก้ไขประเภทหัวจ่าย" : "สร้างประเภทหัวจ่ายใหม่"}
-              </h3>
-              <div className="grid grid-cols-1 gap-3">
-                <div>
-                  <label className="block text-[10px] font-bold mb-1 text-slate-500">ชื่อประเภทหัวจ่าย (เช่น CCS2, AC Type 2, CHAdeMO)</label>
-                  <input
-                    type="text"
-                    value={ctForm.name}
-                    onChange={(e) => setCtForm({ name: e.target.value })}
-                    className={inputClass}
-                    placeholder="เช่น CCS2"
-                  />
-                  {ctErrors.name && <p className="text-[10px] mt-0.5 text-red-500">{ctErrors.name}</p>}
-                </div>
-              </div>
-              <div className="flex gap-2 justify-end pt-1">
-                <button
-                  type="button"
-                  onClick={() => { setShowCtForm(false); resetCtForm(); }}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-50 text-slate-500 border hover:bg-slate-100"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  type="submit"
-                  disabled={isPending}
-                  className="px-4 py-1.5 rounded-lg text-xs font-bold text-white shadow-sm"
-                  style={{ background: "linear-gradient(135deg, #0ea5e9, #00c9a7)" }}
-                >
-                  {isPending ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
-                </button>
-              </div>
-            </form>
-          )}
 
           <div className="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
             {loadingChargerTypes ? (
@@ -1066,12 +786,14 @@ export default function AdminSettingsPage() {
                         <button
                           onClick={() => handleEditCt(ct)}
                           className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-all border border-transparent hover:border-slate-200"
+                          title="แก้ไข"
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => handleDeleteCt(ct.id, ct.name)}
                           className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-600 transition-all border border-transparent hover:border-red-100"
+                          title="ลบ"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -1096,6 +818,414 @@ export default function AdminSettingsPage() {
         <p>• <strong>ประเภทพลังงาน:</strong> บริการพลังงานทางเลือกที่มีในปั๊ม (ใน 1 สถานีบริการสามารถเลือกพลังงานได้มากกว่า 1 ประเภท เช่น มีทั้งน้ำมันดีเซล แก๊ส LPG และตู้อัดประจุไฟฟ้า EV ร่วมกัน)</p>
         <p>• <strong>ประเภทหัวจ่าย:</strong> กำหนดตัวเลือกของหัวชาร์จสำหรับตู้ชาร์จ EV (เช่น CCS2, CHAdeMO, AC Type 2) เพื่อบันทึกข้อมูลรายละเอียดตู้ชาร์จในสถานีนั้น ๆ</p>
       </div>
+
+      {/* ==============================================================
+          MODAL 1: STATION TYPE POPUP
+         ============================================================== */}
+      {showStForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+            onClick={() => { setShowStForm(false); resetStForm(); }}
+          />
+          <div className="relative bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden z-10 animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
+              <div>
+                <h3 className="font-bold text-slate-800 text-sm sm:text-base">
+                  {editStId ? "แก้ไขประเภทสถานี" : "สร้างประเภทสถานีใหม่"}
+                </h3>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  {editStId ? `รหัสอ้างอิง: ${editStId}` : "กำหนดกลุ่มประเภทสถานีและสัญลักษณ์แสดงผล"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setShowStForm(false); resetStForm(); }}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveSt} className="p-6 space-y-4 overflow-y-auto">
+              {!editStId && (
+                <div>
+                  <label className="block text-xs font-bold mb-1.5 text-slate-600">ID (ตัวพิมพ์ใหญ่และตัวเลข เช่น CHARGING_HUB)</label>
+                  <input
+                    type="text"
+                    value={stForm.id}
+                    onChange={(e) => setStForm(f => ({ ...f, id: e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, "") }))}
+                    className={inputClass}
+                    placeholder="CHARGING_HUB"
+                  />
+                  {stErrors.id && <p className="text-[11px] mt-1 text-red-500">{stErrors.id}</p>}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold mb-1.5 text-slate-600">ชื่อประเภทสถานี</label>
+                  <input
+                    type="text"
+                    value={stForm.name}
+                    onChange={(e) => setStForm(f => ({ ...f, name: e.target.value }))}
+                    className={inputClass}
+                    placeholder="ศูนย์ชาร์จรถยนต์ไฟฟ้า"
+                  />
+                  {stErrors.name && <p className="text-[11px] mt-1 text-red-500">{stErrors.name}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold mb-1.5 text-slate-600">ไอคอน (Emoji)</label>
+                  <input
+                    type="text"
+                    value={stForm.icon}
+                    onChange={(e) => setStForm(f => ({ ...f, icon: e.target.value }))}
+                    className={`${inputClass} text-center text-lg`}
+                    placeholder="🔌"
+                    maxLength={2}
+                  />
+                  {stErrors.icon && <p className="text-[11px] mt-1 text-red-500">{stErrors.icon}</p>}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold mb-1.5 text-slate-600">คำอธิบายรายละเอียด</label>
+                <textarea
+                  value={stForm.description}
+                  onChange={(e) => setStForm(f => ({ ...f, description: e.target.value }))}
+                  className={`${inputClass} resize-none`}
+                  rows={3}
+                  placeholder="รายละเอียดสำหรับกลุ่มสถานีนี้..."
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => { setShowStForm(false); resetStForm(); }}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="px-5 py-2 rounded-xl text-xs font-bold text-white shadow-sm transition-all"
+                  style={{ background: "linear-gradient(135deg, #0ea5e9, #00c9a7)" }}
+                >
+                  {isPending ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==============================================================
+          MODAL 2: BRAND POPUP
+         ============================================================== */}
+      {showBrandForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+            onClick={() => { setShowBrandForm(false); resetBrandForm(); }}
+          />
+          <div className="relative bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden z-10 animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
+              <div>
+                <h3 className="font-bold text-slate-800 text-sm sm:text-base">
+                  {editBrandId ? "แก้ไขข้อมูลแบรนด์" : "เพิ่มแบรนด์ผู้ให้บริการใหม่"}
+                </h3>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  ข้อมูลแบรนด์และภาพโลโก้สำหรับแสดงผลในระบบและแผนที่
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setShowBrandForm(false); resetBrandForm(); }}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveBrand} className="p-6 space-y-4 overflow-y-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold mb-1.5 text-slate-600">ชื่อแบรนด์เต็ม (เช่น ปตท.)</label>
+                  <input
+                    type="text"
+                    value={brandForm.name}
+                    onChange={(e) => setBrandForm(f => ({ ...f, name: e.target.value }))}
+                    className={inputClass}
+                    placeholder="ปตท."
+                  />
+                  {brandErrors.name && <p className="text-[11px] mt-1 text-red-500">{brandErrors.name}</p>}
+                </div>
+                <div>
+                  <label className="block text-xs font-bold mb-1.5 text-slate-600">ชื่อย่อ/รหัสแบรนด์ (เช่น PTT)</label>
+                  <input
+                    type="text"
+                    value={brandForm.short_name}
+                    onChange={(e) => setBrandForm(f => ({ ...f, short_name: e.target.value }))}
+                    className={inputClass}
+                    placeholder="PTT"
+                  />
+                  {brandErrors.short_name && <p className="text-[11px] mt-1 text-red-500">{brandErrors.short_name}</p>}
+                </div>
+              </div>
+
+              {/* Brand Logo Upload Box */}
+              <div>
+                <label className="block text-xs font-bold mb-1.5 text-slate-600">โลโก้แบรนด์</label>
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-center gap-4">
+                  <div className="w-20 h-20 bg-white border border-slate-200 rounded-xl flex items-center justify-center overflow-hidden shadow-sm shrink-0">
+                    {brandForm.logo_url ? (
+                      <img src={brandForm.logo_url} alt="Brand Logo Preview" className="w-full h-full object-contain p-1" />
+                    ) : (
+                      <ImageIcon className="w-8 h-8 text-slate-300" />
+                    )}
+                  </div>
+                  <div className="w-full space-y-2">
+                    <label className="flex items-center justify-center gap-1.5 w-full py-2.5 border border-dashed border-sky-300 hover:border-sky-500 bg-sky-50/50 hover:bg-sky-50 text-sky-600 hover:text-sky-700 text-xs font-semibold rounded-xl cursor-pointer transition-all">
+                      <Upload className="w-4 h-4" />
+                      {uploadingLogo ? "กำลังอัปโหลด..." : "อัปโหลดรูปภาพใหม่"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        className="hidden"
+                        disabled={uploadingLogo}
+                      />
+                    </label>
+                    {brandForm.logo_url && (
+                      <button
+                        type="button"
+                        onClick={() => setBrandForm(f => ({ ...f, logo_url: "" }))}
+                        className="w-full text-center text-xs text-red-500 hover:underline"
+                      >
+                        ลบภาพโลโก้
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => { setShowBrandForm(false); resetBrandForm(); }}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  disabled={isPending || uploadingLogo}
+                  className="px-5 py-2 rounded-xl text-xs font-bold text-white shadow-sm transition-all"
+                  style={{ background: "linear-gradient(135deg, #0ea5e9, #00c9a7)" }}
+                >
+                  {isPending ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==============================================================
+          MODAL 3: ENERGY TYPE POPUP
+         ============================================================== */}
+      {showEtForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+            onClick={() => { setShowEtForm(false); resetEtForm(); }}
+          />
+          <div className="relative bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden z-10 animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
+              <div>
+                <h3 className="font-bold text-slate-800 text-sm sm:text-base">
+                  {editEtId ? "แก้ไขประเภทพลังงาน" : "สร้างประเภทพลังงานใหม่"}
+                </h3>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  {editEtId ? `รหัสอ้างอิง: ${editEtId}` : "กำหนดประเภทพลังงาน เชื้อเพลิง และสีหมุดแผนที่"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setShowEtForm(false); resetEtForm(); }}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEt} className="p-6 space-y-4 overflow-y-auto">
+              {!editEtId && (
+                <div>
+                  <label className="block text-xs font-bold mb-1.5 text-slate-600">ID (ตัวย่อภาษาอังกฤษ เช่น EV, OIL, LPG)</label>
+                  <input
+                    type="text"
+                    value={etForm.id}
+                    onChange={(e) => setEtForm(f => ({ ...f, id: e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, "") }))}
+                    className={inputClass}
+                    placeholder="EV"
+                  />
+                  {etErrors.id && <p className="text-[11px] mt-1 text-red-500">{etErrors.id}</p>}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold mb-1.5 text-slate-600">ชื่อพลังงาน (เช่น รถยนต์ไฟฟ้า)</label>
+                  <input
+                    type="text"
+                    value={etForm.name}
+                    onChange={(e) => setEtForm(f => ({ ...f, name: e.target.value }))}
+                    className={inputClass}
+                    placeholder="รถยนต์ไฟฟ้า"
+                  />
+                  {etErrors.name && <p className="text-[11px] mt-1 text-red-500">{etErrors.name}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold mb-1.5 text-slate-600">ไอคอน (Emoji)</label>
+                  <input
+                    type="text"
+                    value={etForm.icon}
+                    onChange={(e) => setEtForm(f => ({ ...f, icon: e.target.value }))}
+                    className={`${inputClass} text-center text-lg`}
+                    placeholder="⚡"
+                    maxLength={2}
+                  />
+                  {etErrors.icon && <p className="text-[11px] mt-1 text-red-500">{etErrors.icon}</p>}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold mb-1.5 text-slate-600">สีของมาร์กเกอร์บนแผนที่</label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={etForm.map_color}
+                    onChange={(e) => setEtForm(f => ({ ...f, map_color: e.target.value }))}
+                    className="w-12 h-11 border border-slate-200 rounded-xl cursor-pointer p-0.5 bg-white shadow-sm shrink-0"
+                  />
+                  <input
+                    type="text"
+                    value={etForm.map_color}
+                    onChange={(e) => setEtForm(f => ({ ...f, map_color: e.target.value }))}
+                    className={inputClass}
+                    placeholder="#3B82F6"
+                  />
+                </div>
+                {etErrors.map_color && <p className="text-[11px] mt-1 text-red-500">{etErrors.map_color}</p>}
+              </div>
+
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <label className="flex items-start gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={etForm.show_icon}
+                    onChange={(e) => setEtForm(f => ({ ...f, show_icon: e.target.checked }))}
+                    className="w-4 h-4 mt-0.5 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                  />
+                  <span className="text-xs text-slate-600">
+                    <strong className="block text-slate-700">แสดงสัญลักษณ์ Emoji ด้านในหมุดแผนที่</strong>
+                    หากปิด จะแสดงผลเป็นจุดกลมทึบตามสีที่เลือก
+                  </span>
+                </label>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => { setShowEtForm(false); resetEtForm(); }}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="px-5 py-2 rounded-xl text-xs font-bold text-white shadow-sm transition-all"
+                  style={{ background: "linear-gradient(135deg, #0ea5e9, #00c9a7)" }}
+                >
+                  {isPending ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==============================================================
+          MODAL 4: CHARGER TYPE POPUP
+         ============================================================== */}
+      {showCtForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+            onClick={() => { setShowCtForm(false); resetCtForm(); }}
+          />
+          <div className="relative bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden z-10 animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
+              <div>
+                <h3 className="font-bold text-slate-800 text-sm sm:text-base">
+                  {editCtId ? "แก้ไขประเภทหัวจ่าย" : "สร้างประเภทหัวจ่ายใหม่"}
+                </h3>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  กำหนดตัวเลือกมาตรฐานหัวชาร์จสำหรับตู้ชาร์จ EV
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setShowCtForm(false); resetCtForm(); }}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveCt} className="p-6 space-y-4 overflow-y-auto">
+              <div>
+                <label className="block text-xs font-bold mb-1.5 text-slate-600">
+                  ชื่อประเภทหัวจ่าย (เช่น CCS2, AC Type 2, CHAdeMO)
+                </label>
+                <input
+                  type="text"
+                  value={ctForm.name}
+                  onChange={(e) => setCtForm({ name: e.target.value })}
+                  className={inputClass}
+                  placeholder="เช่น CCS2"
+                  autoFocus
+                />
+                {ctErrors.name && <p className="text-[11px] mt-1 text-red-500">{ctErrors.name}</p>}
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => { setShowCtForm(false); resetCtForm(); }}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="px-5 py-2 rounded-xl text-xs font-bold text-white shadow-sm transition-all"
+                  style={{ background: "linear-gradient(135deg, #0ea5e9, #00c9a7)" }}
+                >
+                  {isPending ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
