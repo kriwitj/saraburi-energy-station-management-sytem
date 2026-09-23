@@ -1,11 +1,15 @@
 # ==============================
 # Stage 1: Install dependencies (build-time only, includes devDependencies)
 # ==============================
-FROM node:22-alpine AS deps
+FROM node:22-slim AS deps
 WORKDIR /app
 
+# Install openssl and ca-certificates for Prisma and secure package fetching
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+
 COPY package.json package-lock.json ./
-RUN --mount=type=cache,target=/root/.npm npm ci --frozen-lockfile
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --frozen-lockfile --no-audit --no-fund
 
 # ==============================
 # Stage 2: Build Next.js app
@@ -35,16 +39,19 @@ RUN --mount=type=cache,target=/app/.next/cache npm run build
 # Standalone output already bundles the exact node_modules the server needs,
 # so nothing is copied from `deps`/`builder` node_modules here.
 # ==============================
-FROM node:22-alpine AS runner
+FROM node:22-slim AS runner
 WORKDIR /app
+
+# Install openssl and curl for Prisma runtime and healthcheck
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates curl && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
+RUN groupadd --system --gid 1001 nodejs && \
+    useradd --system --uid 1001 -g nodejs nextjs
 
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static

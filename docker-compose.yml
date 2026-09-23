@@ -118,11 +118,14 @@ services:
       NEXT_PUBLIC_CARTO_API_KEY: ${NEXT_PUBLIC_CARTO_API_KEY:-}
       NODE_ENV: production
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:3000/api/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 5
       start_period: 30s
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     networks:
       - proxy_net
       - internal
@@ -154,6 +157,9 @@ services:
       dockerfile: Dockerfile
       target: tools
     profiles: ["tools"]
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     depends_on:
       postgres:
         condition: service_healthy
