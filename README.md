@@ -68,12 +68,14 @@ docker compose up -d --build
 เมื่อระบบของ Container ทั้งหมดเริ่มทำงานเรียบร้อยแล้ว ให้สั่งรันคำสั่งเหล่านี้เพื่อสร้างตารางและใส่ข้อมูลเริ่มต้น (Admin + Editor + Viewer และสถานีจำลอง) จากภายในคอนเทนเนอร์:
 
 ```bash
-# รันคำสั่งสร้างโครงสร้างตารางและอัปเดตฐานข้อมูลภายในคอนเทนเนอร์
-docker compose exec nextjs npm run db:push
+# รันคำสั่งสร้างโครงสร้างตารางและอัปเดตฐานข้อมูล (ผ่าน image ชั่วคราว `tools`)
+docker compose run --rm tools npm run db:push
 
-# รันคำสั่งใส่ข้อมูลจำลองและสิทธิ์แอดมินเริ่มต้นภายในคอนเทนเนอร์
-docker compose exec nextjs npm run db:seed
+# รันคำสั่งใส่ข้อมูลจำลองและสิทธิ์แอดมินเริ่มต้น
+docker compose run --rm tools npm run db:seed
 ```
+
+> หมายเหตุ: อิมเมจ Next.js หลัก (`nextjs`) ใช้ Next.js Standalone Output ล้วนๆ จึงไม่มี Prisma CLI/`tsx` ติดมาด้วย (เพื่อให้ image เล็กและ build เร็วขึ้น) คำสั่งจัดการฐานข้อมูลทั้งหมดจึงต้องรันผ่าน service `tools` ที่ build จาก stage แยกต่างหาก (มี `node_modules` เต็มสำหรับ Prisma CLI) แทนการ `exec` เข้า container หลัก
 
 ### 4. การอัปเดตระบบและการ Migrate ฐานข้อมูล (สำหรับ Production Updates)
 เมื่อมีการดึงอัปเดตโค้ดใหม่ที่มีการเปลี่ยนแปลงโครงสร้างฐานข้อมูล (เช่น การปรับค่า Enum อำเภอเป็นภาษาไทย):
@@ -84,7 +86,7 @@ docker compose exec nextjs npm run db:seed
    ```
 2. รันคำสั่งตรวจสอบและ Deploy Migration เพื่อเปลี่ยนแปลงโครงสร้างฐานข้อมูลจริง:
    ```bash
-   docker compose exec nextjs npx prisma migrate deploy
+   docker compose run --rm --build tools npx prisma migrate deploy
    ```
 
 ---

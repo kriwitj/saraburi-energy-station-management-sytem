@@ -315,7 +315,7 @@ export default function ApiDocsPage() {
                     </code>
                   </div>
                   <p className="text-xs text-slate-400">
-                    ดึงรายการสถานีบริการพลังงานทั้งหมดในจังหวัดสระบุรี ครอบคลุมข้อมูลแบรนด์ ประเภทสถานี ละติจูด ลองจิจูด ประเภทพลังงาน และรายละเอียดตู้ชาร์จไฟฟ้า EV อย่างครบถ้วน
+                    ดึงรายการสถานีบริการพลังงานในจังหวัดสระบุรี ครอบคลุมข้อมูลแบรนด์ ประเภทสถานี ละติจูด ลองจิจูด ประเภทพลังงาน และรายละเอียดตู้ชาร์จไฟฟ้า EV รองรับการกรองตามประเภทพลังงานและอำเภอผ่าน Query Parameter
                   </p>
 
                   {/* HTTP Headers */}
@@ -325,6 +325,64 @@ export default function ApiDocsPage() {
                       <span className="text-sky-400">Content-Type:</span> <span className="text-slate-300">application/json</span><br />
                       <span className="text-sky-400">Access-Control-Allow-Origin:</span> <span className="text-slate-300">*</span><br />
                       <span className="text-sky-400">Cache-Control:</span> <span className="text-slate-300">public, max-age=3600 (แคช 1 ชม.)</span>
+                    </div>
+                  </div>
+
+                  {/* Query Parameters */}
+                  <div className="space-y-2 pt-2 border-t border-white/5">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">พารามิเตอร์สำหรับการกรอง (Query Parameters - Optional)</span>
+                    <div className="overflow-x-auto border border-white/5 rounded-xl">
+                      <table className="w-full text-[11px] text-left">
+                        <thead>
+                          <tr className="border-b border-white/5 bg-white/[0.02]">
+                            <th className="px-3 py-2 text-slate-400 font-semibold w-1/4">Parameter</th>
+                            <th className="px-3 py-2 text-slate-400 font-semibold w-1/4">ค่าที่รองรับ</th>
+                            <th className="px-3 py-2 text-slate-400 font-semibold">คำอธิบาย</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5 text-slate-300">
+                          <tr>
+                            <td className="px-3 py-2 font-mono text-sky-400 font-bold">energy_type</td>
+                            <td className="px-3 py-2 font-mono text-amber-300">OIL | EV | LPG | NGV</td>
+                            <td className="px-3 py-2">กรองตามประเภทพลังงาน เช่น <code>OIL</code> (น้ำมัน), <code>EV</code> (ตู้ชาร์จไฟฟ้า)</td>
+                          </tr>
+                          <tr>
+                            <td className="px-3 py-2 font-mono text-sky-400 font-bold">has_ev_charger</td>
+                            <td className="px-3 py-2 font-mono text-amber-300">true | false</td>
+                            <td className="px-3 py-2">กรองเฉพาะสถานีที่มีหรือไม่มีตู้ชาร์จ EV</td>
+                          </tr>
+                          <tr>
+                            <td className="px-3 py-2 font-mono text-sky-400 font-bold">amphoe</td>
+                            <td className="px-3 py-2 text-amber-300">ชื่ออำเภอ</td>
+                            <td className="px-3 py-2">กรองตามอำเภอ เช่น <code>เมืองสระบุรี</code>, <code>แก่งคอย</code>, <code>หนองแค</code></td>
+                          </tr>
+                          <tr>
+                            <td className="px-3 py-2 font-mono text-sky-400 font-bold">search</td>
+                            <td className="px-3 py-2 text-slate-400">ข้อความค้นหา</td>
+                            <td className="px-3 py-2">ค้นหาจากชื่อสถานี, ตำบล, หรือรายละเอียด</td>
+                          </tr>
+                          <tr>
+                            <td className="px-3 py-2 font-mono text-sky-400 font-bold">limit</td>
+                            <td className="px-3 py-2 text-slate-400">ตัวเลขจำนวนเต็ม</td>
+                            <td className="px-3 py-2">จำกัดจำนวนรายการผลลัพธ์ (หากไม่ระบุจะคืนทั้งหมด)</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Quick URL Examples */}
+                  <div className="space-y-1.5 pt-2 border-t border-white/5">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">ตัวอย่าง URL การเรียกใช้งานจริง</span>
+                    <div className="space-y-1.5 text-[11px] font-mono">
+                      <div className="bg-slate-950/60 px-3 py-2 rounded-lg border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                        <span className="text-slate-400">ดึงเฉพาะปั๊มน้ำมัน (OIL):</span>
+                        <code className="text-emerald-400">https://energy.saraburidev.org/api/public/stations?energy_type=OIL</code>
+                      </div>
+                      <div className="bg-slate-950/60 px-3 py-2 rounded-lg border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                        <span className="text-slate-400">ดึงเฉพาะสถานีชาร์จ (EV):</span>
+                        <code className="text-emerald-400">https://energy.saraburidev.org/api/public/stations?energy_type=EV</code>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -411,13 +469,14 @@ export default function ApiDocsPage() {
 
                 {/* JS Fetch */}
                 <div className="space-y-2">
-                  <span className="text-xs font-bold text-slate-400 uppercase">JavaScript (Fetch API)</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase">JavaScript (Fetch API - ตัวอย่างดึงเฉพาะปั๊มน้ำมัน)</span>
                   <pre className="text-xs font-mono bg-[#050b14] border border-white/5 p-4 rounded-xl text-slate-200 overflow-x-auto leading-relaxed">
-{`fetch('https://energy.saraburidev.org/api/public/stations')
+{`// ดึงเฉพาะสถานีน้ำมัน (หรือระบุ energy_type=EV สำหรับสถานีชาร์จ)
+fetch('https://energy.saraburidev.org/api/public/stations?energy_type=OIL')
   .then(response => response.json())
   .then(json => {
-    console.log("พบสถานีบริการทั้งหมด: " + json.metadata.total_records + " สถานี");
-    console.log(json.data); // รายชื่อสถานีพร้อมข้อมูลตู้ชาร์จ EV
+    console.log("พบสถานีบริการ: " + json.metadata.total_records + " สถานี");
+    console.log(json.data);
   })
   .catch(err => console.error("Error fetching data:", err));`}
                   </pre>
@@ -425,18 +484,22 @@ export default function ApiDocsPage() {
 
                 {/* Python */}
                 <div className="space-y-2">
-                  <span className="text-xs font-bold text-slate-400 uppercase">Python (Requests)</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase">Python (Requests - ตัวอย่างดึงเฉพาะสถานีชาร์จ EV)</span>
                   <pre className="text-xs font-mono bg-[#050b14] border border-white/5 p-4 rounded-xl text-slate-200 overflow-x-auto leading-relaxed">
 {`import requests
 
 url = "https://energy.saraburidev.org/api/public/stations"
-response = requests.get(url)
+params = {
+    "energy_type": "EV",    # หรือ "OIL", "LPG", "NGV"
+    # "amphoe": "แก่งคอย"    # กรองตามอำเภอเพิ่มเติม (ถ้าต้องการ)
+}
+response = requests.get(url, params=params)
 
 if response.status_code == 200:
     json_data = response.json()
     print(f"Total: {json_data['metadata']['total_records']} records")
     for station in json_data['data']:
-        print(station['name'], "EV Charger:", station['has_ev_charger'])`}
+        print(station['name'], "EV Chargers:", len(station['chargers']))`}
                   </pre>
                 </div>
               </div>

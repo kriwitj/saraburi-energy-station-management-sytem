@@ -137,6 +137,28 @@ services:
       - "traefik.http.middlewares.saraburi-nextjs-www-redirect.redirectregex.replacement=https://${APP_DOMAIN:-energy.saraburidev.org}/$${1}"
       - "traefik.http.routers.saraburi-nextjs.middlewares=saraburi-nextjs-www-redirect"
 
+  # ==============================
+  # Prisma CLI / tsx tools (one-off ops commands only)
+  # Not started by `docker compose up`; run explicitly, e.g.:
+  #   docker compose run --rm tools npx prisma migrate deploy
+  #   docker compose run --rm tools npm run db:push
+  #   docker compose run --rm tools npm run db:seed
+  # ==============================
+  tools:
+    image: saraburi-nextjs-tools:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: tools
+    profiles: ["tools"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-saraburi_user}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-saraburi_db}
+    networks:
+      - internal
+
 # ==============================
 # Volumes
 # ==============================

@@ -1,23 +1,85 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
-import { getAmphoeLabel } from "@/lib/constants";
+import { getAmphoeLabel, AMPHOE_MAP_TO_ENUM } from "@/lib/constants";
+import type { Amphoe } from "@prisma/client";
+
+export const dynamic = "force-dynamic";
 
 // GET /api/public/stations
-// Public Open Data API — returns all stations in a standardized format
-export async function GET() {
+// Public Open Data API — returns stations in a standardized format with optional filtering
+export async function GET(request: NextRequest) {
   try {
-    const stations = await prisma.station.findMany({
-      include: {
-        brand: true,
-        station_type: true,
-        chargers: {
-          include: {
-            charger_type: true,
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get("search")?.trim() || "";
+    const amphoeParam = searchParams.get("amphoe")?.trim() || "";
+    const energyTypeParam = searchParams.get("energy_type")?.trim().toUpperCase() || "";
+    const hasEvParam = searchParams.get("has_ev_charger")?.trim();
+    const limitParam = searchParams.get("limit");
+    const pageParam = searchParams.get("page");
+
+    // Build Prisma where clause
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where: any = {};
+
+    if (search) {
+      where.OR = [
+        { station_name: { contains: search, mode: "insensitive" } },
+        { tambon: { contains: search, mode: "insensitive" } },
+        { details: { contains: search, mode: "insensitive" } },
+        { address_details: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    if (amphoeParam) {
+      let amphoeEnum: Amphoe | undefined;
+      if (amphoeParam in AMPHOE_MAP_TO_ENUM) {
+        amphoeEnum = AMPHOE_MAP_TO_ENUM[amphoeParam];
+      } else if (Object.values(AMPHOE_MAP_TO_ENUM).includes(amphoeParam as Amphoe)) {
+        amphoeEnum = amphoeParam as Amphoe;
+      }
+      if (amphoeEnum) {
+        where.amphoe = amphoeEnum;
+      }
+    }
+
+    if (energyTypeParam) {
+      where.energy_types = { has: energyTypeParam };
+    }
+
+    if (hasEvParam !== undefined && hasEvParam !== null && hasEvParam !== "") {
+      where.has_ev_charger = hasEvParam.toLowerCase() === "true" || hasEvParam === "1";
+    }
+
+    // Pagination (optional: if omitted, all matching records are returned)
+    let take: number | undefined = undefined;
+    let skip: number | undefined = undefined;
+    if (limitParam) {
+      const parsedLimit = parseInt(limitParam, 10);
+      if (!isNaN(parsedLimit) && parsedLimit > 0) {
+        take = parsedLimit;
+        const parsedPage = pageParam ? parseInt(pageParam, 10) : 1;
+        skip = (!isNaN(parsedPage) && parsedPage > 0 ? parsedPage - 1 : 0) * take;
+      }
+    }
+
+    const [stations, totalCount] = await Promise.all([
+      prisma.station.findMany({
+        where,
+        include: {
+          brand: true,
+          station_type: true,
+          chargers: {
+            include: {
+              charger_type: true,
+            },
           },
         },
-      },
-      orderBy: { created_at: "desc" },
-    });
+        orderBy: { created_at: "desc" },
+        ...(take ? { take, skip } : {}),
+      }),
+      prisma.station.count({ where }),
+    ]);
 
     const formattedData = stations.map((station) => ({
       id: station.id,
@@ -62,7 +124,17 @@ export async function GET() {
           documentation_url: "https://github.com/kriwit-j/saraburi-pump-charger",
           format: "JSON",
           last_updated: new Date().toISOString(),
-          total_records: stations.length,
+          total_records: totalCount,
+          returned_records: formattedData.length,
+          filters_applied: {
+            energy_type: energyTypeParam || null,
+            amphoe: amphoeParam || null,
+            search: search || null,
+            has_ev_charger:
+              hasEvParam !== undefined && hasEvParam !== null && hasEvParam !== ""
+                ? hasEvParam.toLowerCase() === "true" || hasEvParam === "1"
+                : null,
+          },
         },
         data: formattedData,
       },
