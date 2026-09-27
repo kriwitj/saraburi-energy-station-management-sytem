@@ -124,8 +124,8 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
-    ports:
-      - "3000:3000"
+    # ports:
+    #   - "3000:3000" # Not needed in production; Traefik routes traffic via proxy_net
     dns:
       - 8.8.8.8
       - 1.1.1.1
