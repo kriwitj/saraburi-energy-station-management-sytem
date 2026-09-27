@@ -20,8 +20,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    ports:
-      - "5432:5432"
+    # ports:
+    #   - "5432:5432" # Disabled to prevent host port collision; nextjs connects via internal network
     networks:
       - internal
 
