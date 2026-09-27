@@ -12,7 +12,25 @@ RUN --mount=type=cache,target=/root/.npm \
     npm ci --frozen-lockfile --no-audit --no-fund
 
 # ==============================
-# Stage 2: Build Next.js app
+# Stage 2: Tools image — Prisma CLI / tsx for one-off ops commands
+# (migrate deploy, db push, db seed) run via:
+#   docker compose run --rm tools npx prisma migrate deploy
+# ==============================
+FROM deps AS tools
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+COPY prisma ./prisma
+COPY prisma.config.js ./prisma.config.js
+COPY tsconfig.json ./tsconfig.json
+
+RUN npx prisma generate
+
+CMD ["npx", "prisma", "migrate", "deploy"]
+
+# ==============================
+# Stage 3: Build Next.js app
 # ==============================
 FROM deps AS builder
 WORKDIR /app
@@ -35,7 +53,7 @@ ENV NODE_ENV=production
 RUN --mount=type=cache,target=/app/.next/cache npm run build
 
 # ==============================
-# Stage 3: Production runtime
+# Stage 4: Production runtime (DEFAULT FINAL STAGE)
 # Standalone output already bundles the exact node_modules the server needs,
 # so nothing is copied from `deps`/`builder` node_modules here.
 # ==============================
@@ -61,22 +79,3 @@ USER nextjs
 EXPOSE 3000
 
 CMD ["node", "server.js"]
-
-# ==============================
-# Stage 4: Tools image — Prisma CLI / tsx for one-off ops commands
-# (migrate deploy, db push, db seed) run via:
-#   docker compose run --rm tools npx prisma migrate deploy
-# Not part of the `runner` image, so the app image stays minimal.
-# ==============================
-FROM deps AS tools
-WORKDIR /app
-
-ENV NODE_ENV=production
-
-COPY prisma ./prisma
-COPY prisma.config.js ./prisma.config.js
-COPY tsconfig.json ./tsconfig.json
-
-RUN npx prisma generate
-
-CMD ["npx", "prisma", "migrate", "deploy"]

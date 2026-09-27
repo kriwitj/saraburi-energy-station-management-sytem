@@ -20,8 +20,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    # ports:
-    #   - "5432:5432" # Un-comment to expose postgres locally if needed
+    ports:
+      - "5432:5432"
     networks:
       - internal
 
@@ -38,9 +38,9 @@ services:
       MINIO_ROOT_PASSWORD: minioadmin123
     volumes:
       - minio_data:/data
-    # ports:
-    #   - "9000:9000"    # S3 API (mapped via Traefik in production)
-    #   - "9001:9001"    # MinIO Web Console (mapped via Traefik in production)
+    ports:
+      - "9000:9000"    # S3 API
+      - "9001:9001"    # MinIO Web Console
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
       interval: 15s
@@ -94,6 +94,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: runner
       args:
         NEXT_PUBLIC_CARTO_API_KEY: ${NEXT_PUBLIC_CARTO_API_KEY:-}
     container_name: saraburi_charger_nextjs
@@ -123,6 +124,8 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    ports:
+      - "3000:3000"
     dns:
       - 8.8.8.8
       - 1.1.1.1

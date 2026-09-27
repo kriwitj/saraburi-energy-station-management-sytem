@@ -159,9 +159,11 @@ export const SARABURI_BOUNDARY: [number, number][] = [
 // ==============================
 // CARTO Map Configuration
 // ==============================
-const cartoApiKey = process.env.NEXT_PUBLIC_CARTO_API_KEY;
+const rawCartoApiKey = (process.env.NEXT_PUBLIC_CARTO_API_KEY || "").trim();
+const cartoApiKey = rawCartoApiKey.replace(/^["']|["']$/g, "");
+
 export const CARTO_BASEMAP_URL = cartoApiKey
-  ? `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?api_key=${cartoApiKey}`
+  ? `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${cartoApiKey}`
   : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
 
 
