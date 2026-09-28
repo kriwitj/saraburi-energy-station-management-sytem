@@ -91,38 +91,62 @@ export default function ApiDocsPage() {
       "ชื่อสถานี (Station Name)",
       "แบรนด์ (Brand)",
       "ประเภทสถานี (Station Type)",
-      "ประเภทพลังงาน (Energy Types)",
-      "อำเภอ (Amphoe)",
       "ตำบล (Tambon)",
+      "อำเภอ (Amphoe)",
+      "จังหวัด (Province)",
       "ละติจูด (Latitude)",
       "ลองจิจูด (Longitude)",
+      "มี_น้ำมัน (Has_OIL)",
+      "มี_LPG (Has_LPG)",
+      "มี_NGV (Has_NGV)",
+      "มี_EV_Charger (Has_EV)",
+      "ประเภทพลังงานทั้งหมด (Energy Types)",
+      "จำนวนตู้ชาร์จ (Total Chargers)",
+      "จำนวนหัวชาร์จรวม (Total Plugs)",
+      "กำลังไฟฟ้ารวม_kW (Total Power kW)",
+      "รายละเอียดตู้ชาร์จ EV (EV Chargers Info)",
       "รายละเอียดที่อยู่ (Address Details)",
       "รายละเอียดเพิ่มเติม (Details)",
-      "มีตู้ชาร์จ EV (Has EV Charger)",
-      "รายละเอียดตู้ชาร์จ EV (EV Chargers Info)",
     ];
 
     const rows = filteredStations.map((station) => {
-      const chargerInfo =
-        station.chargers && station.chargers.length > 0
-          ? station.chargers
-              .map((c: any) => `${c.charger_type}: ${c.power_kw}kW (${c.plug_count} หัว)`)
-              .join(" | ")
-          : "-";
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const chargers = station.chargers || [];
+      const hasOil = station.energy_types?.includes("OIL") ? 1 : 0;
+      const hasLpg = station.energy_types?.includes("LPG") ? 1 : 0;
+      const hasNgv = station.energy_types?.includes("NGV") ? 1 : 0;
+      const hasEv = station.has_ev_charger || station.energy_types?.includes("EV") ? 1 : 0;
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const totalPlugs = chargers.reduce((sum: number, c: any) => sum + (Number(c.plug_count) || 0), 0);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const totalPowerKw = chargers.reduce((sum: number, c: any) => sum + ((Number(c.power_kw) || 0) * (Number(c.plug_count) || 1)), 0);
+
+      const chargerInfo = chargers.length > 0
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ? chargers.map((c: any) => `${c.charger_type}: ${c.power_kw}kW (${c.plug_count} หัว)`).join(" | ")
+        : (hasEv ? "มีตู้ชาร์จ EV" : "-");
 
       return [
         station.name,
         station.brand?.name || "-",
         station.station_type?.name || "-",
-        station.energy_types ? station.energy_types.join(", ") : "-",
-        station.amphoe,
         station.tambon,
+        station.amphoe,
+        "สระบุรี",
         station.latitude,
         station.longitude,
+        hasOil,
+        hasLpg,
+        hasNgv,
+        hasEv,
+        station.energy_types ? station.energy_types.join(", ") : "-",
+        chargers.length,
+        totalPlugs,
+        totalPowerKw,
+        chargerInfo,
         station.address_details || "-",
         station.details || "-",
-        station.has_ev_charger ? "มี" : "ไม่มี",
-        chargerInfo,
       ];
     });
 
