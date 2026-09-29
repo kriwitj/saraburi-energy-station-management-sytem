@@ -492,7 +492,7 @@ export default function MapView({
 
       {/* Legend */}
       <div
-        className="absolute bottom-16 sm:bottom-4 left-4 z-[1000] p-3 rounded-xl text-xs"
+        className="hidden lg:flex absolute bottom-4 left-[396px] z-[990] p-3 rounded-xl text-xs flex-col"
         style={{
           background: "rgba(15, 32, 68, 0.95)",
           border: "1px solid rgba(255,255,255,0.1)",

@@ -663,15 +663,15 @@ export default function LandingClient({ initialStations, session: initialSession
         </div>
       </header>
 
-      {/* Floating GPS Button on Map */}
-      <div className="absolute bottom-20 lg:bottom-6 right-4 z-[990] flex flex-col gap-2">
+      {/* Floating GPS Button on Map (Cleanly stacked above Leaflet zoom controls) */}
+      <div className="absolute bottom-20 sm:bottom-28 right-2.5 sm:right-2.5 z-[990] flex flex-col gap-2">
         <button
           onClick={() => getUserGPSLocation()}
           disabled={locatingUser}
-          className="p-3 rounded-full bg-[#0f2044]/90 backdrop-blur-md border border-white/15 text-white shadow-2xl touch-target transition-all hover:bg-[#162850] hover:scale-105 active:scale-95"
+          className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#0f2044]/95 backdrop-blur-md border border-white/15 text-white shadow-2xl transition-all hover:bg-[#162850] hover:text-[#0ea5e9] hover:scale-105 active:scale-95 flex items-center justify-center touch-target"
           title="ระบุพิกัดของฉัน และเลื่อนหน้าจอไปยังตำแหน่งปัจจุบัน"
         >
-          <Navigation className={`w-5 h-5 ${locatingUser ? "animate-spin text-[#0ea5e9]" : "text-white"}`} />
+          <Navigation className={`w-4 h-4 sm:w-4.5 sm:h-4.5 ${locatingUser ? "animate-spin text-[#0ea5e9]" : "text-white"}`} />
         </button>
       </div>
 
