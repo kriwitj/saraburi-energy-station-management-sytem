@@ -528,7 +528,7 @@ export default function MapView({
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-1 text-[10px]">
-                  {selectedStation.chargers.map((c, i) => (
+                  {selectedStation.chargers.map((c: any, i: number) => (
                     <span
                       key={c.id || i}
                       className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-200 font-medium"
