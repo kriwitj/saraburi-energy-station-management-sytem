@@ -1902,8 +1902,9 @@ export default function LandingClient({ initialStations, session: initialSession
                 </div>
               )}
             </div>
-          </div>
-        </aside>
+          )}
+        </div>
+      </aside>
 
       {/* ==============================
           MODAL: FLOATING AUTH LOGIN
