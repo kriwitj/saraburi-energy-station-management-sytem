@@ -5,6 +5,7 @@ import type { Station } from "@/types/station";
 import {
   AMPHOE_LIST,
   AMPHOE_CENTERS,
+  AMPHOE_MAP_TO_ENUM,
   SARABURI_CENTER,
   SARABURI_DEFAULT_ZOOM,
   SARABURI_DISTRICT_ZOOM,
@@ -64,6 +65,10 @@ interface MapViewProps {
   userLocation?: [number, number] | null;
   selectedType?: string;
   energyTypes?: any[];
+  selectedAmphoe?: string;
+  hideDistrictSelect?: boolean;
+  hideStationPanel?: boolean;
+  flyToUserLocationTrigger?: number;
 }
 
 export default function MapView({
@@ -73,6 +78,10 @@ export default function MapView({
   userLocation,
   selectedType,
   energyTypes,
+  selectedAmphoe: externalSelectedAmphoe,
+  hideDistrictSelect = false,
+  hideStationPanel = false,
+  flyToUserLocationTrigger,
 }: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -105,6 +114,35 @@ export default function MapView({
       }
     );
   }, [mapReady, selectedStation]);
+
+  // Sync external Amphoe selection and fly to district
+  useEffect(() => {
+    if (!mapReady || !leafletMapRef.current) return;
+    if (externalSelectedAmphoe) {
+      const center =
+        AMPHOE_CENTERS[externalSelectedAmphoe as Amphoe] ||
+        (AMPHOE_MAP_TO_ENUM[externalSelectedAmphoe] ? AMPHOE_CENTERS[AMPHOE_MAP_TO_ENUM[externalSelectedAmphoe]] : null);
+      if (center) {
+        leafletMapRef.current.flyTo(center, SARABURI_DISTRICT_ZOOM, {
+          duration: 1.5,
+          easeLinearity: 0.25,
+        });
+      }
+    } else if (externalSelectedAmphoe === "") {
+      leafletMapRef.current.flyTo(SARABURI_CENTER, SARABURI_DEFAULT_ZOOM, {
+        duration: 1.2,
+      });
+    }
+  }, [mapReady, externalSelectedAmphoe]);
+
+  // Fly to user location when requested
+  useEffect(() => {
+    if (!mapReady || !leafletMapRef.current || !userLocation || !flyToUserLocationTrigger) return;
+    leafletMapRef.current.flyTo(userLocation, 16, {
+      duration: 1.5,
+      easeLinearity: 0.25,
+    });
+  }, [mapReady, flyToUserLocationTrigger]);
 
   // Place User Location Marker
   useEffect(() => {
@@ -352,98 +390,103 @@ export default function MapView({
       <div ref={mapRef} className="w-full h-full" />
 
       {/* Controls Overlay */}
-      <div className="absolute top-4 left-4 right-4 z-[1000] flex flex-col sm:flex-row gap-2 pointer-events-none">
+      <div className={`absolute top-4 ${hideDistrictSelect ? "right-4" : "left-4 right-4"} z-[1000] flex flex-col sm:flex-row items-end sm:items-center justify-between gap-2 pointer-events-none`}>
         {/* District selector */}
-        <div className="pointer-events-auto">
-          <select
-            id="map-amphoe-select"
-            value={selectedAmphoe}
-            onChange={(e) => handleAmphoeChange(e.target.value)}
-            className="text-sm py-2.5 px-3 rounded-xl touch-target"
-            style={{
-              background: "rgba(15, 32, 68, 0.95)",
-              border: "1px solid rgba(255,255,255,0.15)",
-              color: selectedAmphoe ? "#f1f5f9" : "#94a3b8",
-              backdropFilter: "blur(12px)",
-            }}
-          >
-            <option value="" style={{ color: "#334155" }}>🗺 ทุกอำเภอ</option>
-            {AMPHOE_LIST.map((a) => (
-              <option key={a.value} value={a.value} style={{ color: "#334155" }}>{a.label}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Basemap Style Switcher Dropdown */}
-        <div className="pointer-events-auto relative">
-          <button
-            type="button"
-            onClick={() => setShowBasemapMenu(!showBasemapMenu)}
-            className="flex items-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-semibold touch-target transition-all"
-            style={{
-              background: "rgba(15, 32, 68, 0.95)",
-              border: "1px solid rgba(255,255,255,0.15)",
-              color: "#f1f5f9",
-              backdropFilter: "blur(12px)",
-            }}
-            title="เปลี่ยนรูปแบบแผนที่"
-          >
-            <Layers className="w-4 h-4 text-sky-400" />
-            <span className="hidden sm:inline">
-              {MAP_BASEMAPS[activeBasemap]?.name || "รูปแบบแผนที่"}
-            </span>
-          </button>
-
-          {showBasemapMenu && (
-            <div
-              className="absolute left-0 mt-1.5 w-56 rounded-xl shadow-xl border overflow-hidden z-[1100] animate-in fade-in duration-150"
+        {!hideDistrictSelect && (
+          <div className="pointer-events-auto">
+            <select
+              id="map-amphoe-select"
+              value={selectedAmphoe}
+              onChange={(e) => handleAmphoeChange(e.target.value)}
+              className="text-xs py-2 px-3 rounded-xl touch-target"
               style={{
-                background: "rgba(15, 32, 68, 0.98)",
-                borderColor: "rgba(255, 255, 255, 0.15)",
-                backdropFilter: "blur(16px)",
+                background: "rgba(15, 32, 68, 0.95)",
+                border: "1px solid rgba(255,255,255,0.15)",
+                color: selectedAmphoe ? "#f1f5f9" : "#94a3b8",
+                backdropFilter: "blur(12px)",
               }}
             >
-              <div className="px-3 py-2 border-b border-white/10 text-[10px] font-bold uppercase text-slate-400">
-                เลือกรูปแบบแผนที่
+              <option value="" style={{ color: "#334155" }}>🗺 ทุกอำเภอ</option>
+              {AMPHOE_LIST.map((a) => (
+                <option key={a.value} value={a.value} style={{ color: "#334155" }}>{a.label}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <div className="flex items-center gap-2 pointer-events-auto">
+          {/* Basemap Style Switcher Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowBasemapMenu(!showBasemapMenu)}
+              className="flex items-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold touch-target transition-all shadow-lg"
+              style={{
+                background: "rgba(15, 32, 68, 0.95)",
+                border: "1px solid rgba(255,255,255,0.15)",
+                color: "#f1f5f9",
+                backdropFilter: "blur(12px)",
+              }}
+              title="เปลี่ยนรูปแบบแผนที่"
+            >
+              <Layers className="w-3.5 h-3.5 text-sky-400" />
+              <span className="hidden sm:inline">
+                {MAP_BASEMAPS[activeBasemap]?.name || "รูปแบบแผนที่"}
+              </span>
+            </button>
+
+            {showBasemapMenu && (
+              <div
+                className="absolute right-0 mt-1.5 w-56 rounded-xl shadow-2xl border overflow-hidden z-[1100] animate-in fade-in duration-150"
+                style={{
+                  background: "rgba(15, 32, 68, 0.98)",
+                  borderColor: "rgba(255, 255, 255, 0.15)",
+                  backdropFilter: "blur(16px)",
+                }}
+              >
+                <div className="px-3 py-2 border-b border-white/10 text-[10px] font-bold uppercase text-slate-400">
+                  เลือกรูปแบบแผนที่
+                </div>
+                <div className="p-1 space-y-0.5">
+                  {Object.entries(MAP_BASEMAPS).map(([key, opt]) => {
+                    const isSelected = activeBasemap === key;
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => {
+                          setActiveBasemap(key);
+                          setShowBasemapMenu(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium flex items-center justify-between transition-colors ${
+                          isSelected
+                            ? "bg-sky-500/20 text-sky-400 font-bold border border-sky-500/30"
+                            : "text-slate-300 hover:bg-white/5 hover:text-white"
+                        }`}
+                      >
+                        <span>{opt.name}</span>
+                        {isSelected && <span className="text-sky-400 text-xs">✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="p-1 space-y-0.5">
-                {Object.entries(MAP_BASEMAPS).map(([key, opt]) => {
-                  const isSelected = activeBasemap === key;
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => {
-                        setActiveBasemap(key);
-                        setShowBasemapMenu(false);
-                      }}
-                      className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium flex items-center justify-between transition-colors ${
-                        isSelected
-                          ? "bg-sky-500/20 text-sky-400 font-bold border border-sky-500/30"
-                          : "text-slate-300 hover:bg-white/5 hover:text-white"
-                      }`}
-                    >
-                      <span>{opt.name}</span>
-                      {isSelected && <span className="text-sky-400 text-xs">✓</span>}
-                    </button>
-                  );
-                })}
-              </div>
+            )}
+          </div>
+
+          {/* Station count */}
+          {!hideDistrictSelect && (
+            <div
+              className="pointer-events-none px-3 py-2 rounded-xl text-xs font-medium"
+              style={{
+                background: "rgba(15, 32, 68, 0.95)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                color: "#94a3b8",
+                backdropFilter: "blur(12px)",
+              }}
+            >
+              📍 {stations.length} สถานี
             </div>
           )}
-        </div>
-
-        {/* Station count */}
-        <div
-          className="pointer-events-none px-3 py-2 rounded-xl text-sm font-medium"
-          style={{
-            background: "rgba(15, 32, 68, 0.95)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            color: "#94a3b8",
-            backdropFilter: "blur(12px)",
-            alignSelf: "flex-start",
-          }}
-        >
-          📍 {stations.length} สถานี
         </div>
       </div>
 
@@ -467,7 +510,7 @@ export default function MapView({
       </div>
 
       {/* Station Info Panel */}
-      {selectedStation && (
+      {!hideStationPanel && selectedStation && (
         <div
           className="absolute bottom-16 sm:bottom-4 right-4 z-[1000] rounded-2xl overflow-hidden"
           style={{
