@@ -11,11 +11,51 @@ import {
   ENERGY_TYPE_CONFIG,
   getAmphoeLabel,
   type EnergyTypeKey,
-  MAP_BASEMAPS,
-  DEFAULT_BASEMAP,
+  CARTO_BASEMAP_URL,
 } from "@/lib/constants";
 import type { Amphoe } from "@prisma/client";
 import { Layers } from "lucide-react";
+
+export interface BasemapOption {
+  id: string;
+  name: string;
+  url: string;
+  subdomains: string | string[];
+  maxZoom: number;
+}
+
+export const MAP_BASEMAPS: Record<string, BasemapOption> = {
+  GOOGLE_THAI: {
+    id: "google_thai",
+    name: "🇹🇭 แผนที่ภาษาไทย (Google)",
+    url: "https://mt{s}.google.com/vt/lyrs=m&hl=th&x={x}&y={y}&z={z}",
+    subdomains: ["0", "1", "2", "3"],
+    maxZoom: 20,
+  },
+  OSM_THAI: {
+    id: "osm_thai",
+    name: "🗺️ OpenStreetMap (ไทย)",
+    url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    subdomains: ["a", "b", "c"],
+    maxZoom: 19,
+  },
+  CARTO_VOYAGER: {
+    id: "carto_voyager",
+    name: "🎨 CARTO Voyager",
+    url: CARTO_BASEMAP_URL,
+    subdomains: "abcd",
+    maxZoom: 19,
+  },
+  GOOGLE_SATELLITE: {
+    id: "google_satellite",
+    name: "🛰️ ดาวเทียม (Satellite)",
+    url: "https://mt{s}.google.com/vt/lyrs=y&hl=th&x={x}&y={y}&z={z}",
+    subdomains: ["0", "1", "2", "3"],
+    maxZoom: 20,
+  },
+};
+
+export const DEFAULT_BASEMAP = MAP_BASEMAPS.GOOGLE_THAI;
 
 interface MapViewProps {
   stations: Station[];
