@@ -13,13 +13,28 @@ export default async function HomePage() {
 
   // Fetch all stations from database for the public map
   const stations = await prisma.station.findMany({
-    include: { brand: true, station_type: true },
+    include: {
+      brand: true,
+      station_type: true,
+      chargers: {
+        include: {
+          charger_type: true,
+        },
+      },
+    },
     orderBy: { created_at: "desc" },
   });
 
   // Serialize Dates for client side compatibility
   const serializedStations: Station[] = stations.map((s) => ({
     ...s,
+    chargers: s.chargers?.map((c) => ({
+      id: c.id,
+      charger_type_id: c.charger_type_id,
+      charger_type: c.charger_type ? { id: c.charger_type.id, name: c.charger_type.name } : undefined,
+      power_kw: c.power_kw,
+      plug_count: c.plug_count,
+    })),
     created_at: s.created_at.toISOString(),
     updated_at: s.updated_at.toISOString(),
   }));

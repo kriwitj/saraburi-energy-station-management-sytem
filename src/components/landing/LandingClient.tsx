@@ -30,6 +30,7 @@ import {
   Info,
   Calendar,
   FileText,
+  ExternalLink,
 } from "lucide-react";
 import type { Station, SessionUser, User as DBUser } from "@/types/station";
 import {
@@ -91,6 +92,7 @@ export default function LandingClient({ initialStations, session: initialSession
   // User Geolocation State
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [locatingUser, setLocatingUser] = useState(false);
+  const [flyToUserTrigger, setFlyToUserTrigger] = useState(0);
 
   // Metadata dynamic states
   const [brands, setBrands] = useState<{ id: string; name: string; short_name: string; logo_url: string | null }[]>([]);
@@ -487,6 +489,7 @@ export default function LandingClient({ initialStations, session: initialSession
       (position) => {
         const coords: [number, number] = [position.coords.latitude, position.coords.longitude];
         setUserLocation(coords);
+        setFlyToUserTrigger((prev) => prev + 1);
         setLocatingUser(false);
         toast.success("ระบุตำแหน่งของคุณสำเร็จ");
         if (callback) callback(coords);
@@ -539,108 +542,138 @@ export default function LandingClient({ initialStations, session: initialSession
   }
 
   return (
-    <div className="relative w-full h-screen overflow-hidden flex flex-col" style={{ background: "#0a1628" }}>
-      
-      {/* 1. Header (Premium Floating / Top Navbar) */}
+    <div className="relative w-full h-screen overflow-hidden" style={{ background: "#0a1628" }}>
+      {/* Full-width Map Background (Edge-to-Edge) */}
+      <div className="absolute inset-0 z-0">
+        <MapView
+          stations={filteredStations}
+          selectedStation={selectedStation}
+          onSelectStation={handleSelectStation}
+          userLocation={userLocation}
+          selectedType={selectedType}
+          energyTypes={energyTypes}
+          selectedAmphoe={selectedAmphoe}
+          flyToUserLocationTrigger={flyToUserTrigger}
+        />
+      </div>
+
+      {/* 1. Header (Centered Floating Island Card) */}
       <header
-        className="relative z-[1050] h-14 border-b backdrop-blur-md flex items-center justify-between px-4"
-        style={{ background: "rgba(15, 32, 68, 0.85)", borderColor: "rgba(255, 255, 255, 0.08)" }}
+        className="absolute top-3 sm:top-4 left-1/2 -translate-x-1/2 z-[1050] max-w-[94vw] pointer-events-auto"
       >
-        <div className="flex items-center gap-2">
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, #0ea5e9, #00c9a7)" }}
-          >
-            <Zap className="w-4 h-4 text-white" />
-          </div>
-          <div>
-            <h1 className="font-bold text-xs sm:text-sm text-white">Saraburi Energy Hub</h1>
-            <p className="text-[9px] text-slate-400">ระบบแผนที่อัจฉริยะ (Google Maps Style)</p>
-          </div>
-        </div>
-
-        {/* Action Panel: Login/User details */}
-        <div className="flex items-center gap-2">
-          <Link
-            href="/api-docs"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white transition-colors border border-white/10 hover:border-white/20 touch-target"
-            style={{ background: "rgba(255, 255, 255, 0.03)" }}
-          >
-            <FileText className="w-4 h-4 text-[#0ea5e9]" />
-            <span className="hidden sm:inline">ดึงข้อมูลผ่าน API</span>
-            <span className="sm:hidden">API Docs</span>
-          </Link>
-
-          {session ? (
-            <div className="flex items-center gap-2">
-              {/* Admin users list trigger */}
-              {session.role === "ADMIN" && (
-                <button
-                  onClick={() => setShowUsersModal(true)}
-                  className="p-2 rounded-xl text-slate-300 hover:text-white transition-colors touch-target"
-                  style={{ background: "rgba(255,255,255,0.05)" }}
-                  title="จัดการผู้ใช้งาน"
-                >
-                  <Users className="w-4 h-4" />
-                </button>
-              )}
-
-              {/* Profile display & log out */}
-              <div className="hidden sm:flex flex-col items-end">
-                <span className="text-xs font-semibold text-white">{session.name}</span>
-                <span className="text-[9px] text-[#0ea5e9] font-medium">{session.role}</span>
-              </div>
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                style={{ background: "linear-gradient(135deg, #0ea5e9, #00c9a7)" }}>
-                {session.name.charAt(0)}
-              </div>
-              <button
-                onClick={handleLogout}
-                className="p-2 rounded-xl text-red-400 hover:text-red-300 transition-colors touch-target"
-                style={{ background: "rgba(239,68,68,0.1)" }}
-                title="ออกจากระบบ"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => router.push("/login")}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white touch-target transition-all"
+        <div
+          className="flex items-center gap-2 sm:gap-3.5 px-3 sm:px-4 py-2 rounded-2xl border shadow-2xl backdrop-blur-xl transition-all"
+          style={{
+            background: "rgba(15, 32, 68, 0.88)",
+            borderColor: "rgba(255, 255, 255, 0.12)",
+            boxShadow: "0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 20px 0 rgba(14, 165, 233, 0.12)",
+          }}
+        >
+          {/* Logo & Title */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            <div
+              className="w-8 h-8 rounded-xl flex items-center justify-center shadow-md flex-shrink-0"
               style={{ background: "linear-gradient(135deg, #0ea5e9, #00c9a7)" }}
             >
-              <LogIn className="w-4.5 h-4.5" />
-              เข้าสู่ระบบ
+              <Zap className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <h1 className="font-extrabold text-xs sm:text-sm text-white tracking-tight whitespace-nowrap">
+                  Saraburi Energy Hub
+                </h1>
+                <span className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-[#0ea5e9]/15 text-[#38bdf8] border border-[#0ea5e9]/30">
+                  {stations.length} สถานี
+                </span>
+              </div>
+              <p className="text-[9px] text-slate-400 hidden md:block">
+                ระบบค้นหาสถานีพลังงาน จ.สระบุรี
+              </p>
+            </div>
+          </div>
+
+          <div className="h-5 w-[1px] bg-white/10 hidden sm:block" />
+
+          {/* Quick Actions & Profile */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Quick Find Nearest Button */}
+            <button
+              onClick={() => findNearestStation()}
+              disabled={locatingUser}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold text-white transition-all border border-emerald-500/30 hover:border-emerald-500/60 shadow-sm"
+              style={{ background: "rgba(16, 185, 129, 0.15)" }}
+              title="ค้นหาสถานีที่ใกล้ที่สุดจากพิกัดของคุณ"
+            >
+              <Navigation className={`w-3.5 h-3.5 text-emerald-400 ${locatingUser ? "animate-spin" : ""}`} />
+              <span className="hidden md:inline text-emerald-300">สถานีใกล้ฉัน</span>
             </button>
-          )}
+
+            {/* API Docs Link */}
+            <Link
+              href="/api-docs"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white transition-all border border-white/10 hover:border-white/20"
+              style={{ background: "rgba(255, 255, 255, 0.04)" }}
+              title="API Documentation"
+            >
+              <FileText className="w-3.5 h-3.5 text-[#0ea5e9]" />
+              <span className="hidden sm:inline">API</span>
+            </Link>
+
+            {session ? (
+              <div className="flex items-center gap-1.5">
+                {session.role === "ADMIN" && (
+                  <button
+                    onClick={() => setShowUsersModal(true)}
+                    className="p-1.5 rounded-xl text-slate-300 hover:text-white transition-colors border border-white/10"
+                    style={{ background: "rgba(255,255,255,0.05)" }}
+                    title="จัดการผู้ใช้งาน"
+                  >
+                    <Users className="w-3.5 h-3.5" />
+                  </button>
+                )}
+
+                <div
+                  className="w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold text-white shadow-inner flex-shrink-0"
+                  style={{ background: "linear-gradient(135deg, #0ea5e9, #00c9a7)" }}
+                  title={`${session.name} (${session.role})`}
+                >
+                  {session.name.charAt(0)}
+                </div>
+
+                <button
+                  onClick={handleLogout}
+                  className="p-1.5 rounded-xl text-red-400 hover:text-red-300 transition-colors border border-red-500/20"
+                  style={{ background: "rgba(239,68,68,0.1)" }}
+                  title="ออกจากระบบ"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => router.push("/login")}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white shadow-md transition-all hover:brightness-110"
+                style={{ background: "linear-gradient(135deg, #0ea5e9, #00c9a7)" }}
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span className="hidden xs:inline">เข้าสู่ระบบ</span>
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
-      {/* 2. Interactive Map Container (Full Screen Layout) */}
-      <div className="relative flex-1 w-full overflow-hidden">
-        {/* Full-width Map Background */}
-        <div className="absolute inset-0 z-0">
-          <MapView
-            stations={filteredStations}
-            selectedStation={selectedStation}
-            onSelectStation={handleSelectStation}
-            userLocation={userLocation}
-            selectedType={selectedType}
-            energyTypes={energyTypes}
-          />
-        </div>
-
-        {/* Floating GPS Button on Map */}
-        <div className="absolute bottom-24 right-4 z-10 flex flex-col gap-2">
-          <button
-            onClick={() => getUserGPSLocation()}
-            disabled={locatingUser}
-            className="p-3 rounded-full bg-[#0f2044]/90 backdrop-blur-md border border-white/10 text-white shadow-xl touch-target transition-all hover:bg-[#162850]"
-            title="ระบุพิกัดของฉัน"
-          >
-            <Navigation className={`w-5 h-5 ${locatingUser ? "animate-spin text-[#0ea5e9]" : "text-white"}`} />
-          </button>
-        </div>
+      {/* Floating GPS Button on Map */}
+      <div className="absolute bottom-20 lg:bottom-6 right-4 z-[990] flex flex-col gap-2">
+        <button
+          onClick={() => getUserGPSLocation()}
+          disabled={locatingUser}
+          className="p-3 rounded-full bg-[#0f2044]/90 backdrop-blur-md border border-white/15 text-white shadow-2xl touch-target transition-all hover:bg-[#162850] hover:scale-105 active:scale-95"
+          title="ระบุพิกัดของฉัน และเลื่อนหน้าจอไปยังตำแหน่งปัจจุบัน"
+        >
+          <Navigation className={`w-5 h-5 ${locatingUser ? "animate-spin text-[#0ea5e9]" : "text-white"}`} />
+        </button>
+      </div>
 
         {/* 3. Floating Sidebar Panel (Desktop: Left Side Over Map) */}
         <aside
@@ -878,6 +911,88 @@ export default function LandingClient({ initialStations, session: initialSession
                       </div>
                     </div>
 
+                    {/* EV Charging Section */}
+                    {(selectedStation.energy_types.includes("EV") || selectedStation.has_ev_charger || (selectedStation.chargers && selectedStation.chargers.length > 0)) && (
+                      <div className="glass-card p-3 rounded-xl border border-emerald-500/25 bg-emerald-950/20 space-y-2.5">
+                        <div className="flex items-center justify-between border-b border-white/5 pb-1.5">
+                          <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
+                            <span className="text-sm">⚡</span>
+                            <span>ข้อมูลหัวชาร์จรถไฟฟ้า (EV)</span>
+                          </div>
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                            EV Charger
+                          </span>
+                        </div>
+
+                        {selectedStation.chargers && selectedStation.chargers.length > 0 ? (
+                          <>
+                            {/* Summary metrics */}
+                            <div className="grid grid-cols-3 gap-1.5 text-center">
+                              <div className="bg-white/5 rounded-lg p-2 border border-white/5">
+                                <span className="text-[9px] text-slate-400 block uppercase">หัวจ่าย</span>
+                                <span className="text-sm font-bold text-emerald-400">
+                                  {selectedStation.chargers.reduce((acc, c) => acc + (c.plug_count || 1), 0)} หัว
+                                </span>
+                              </div>
+                              <div className="bg-white/5 rounded-lg p-2 border border-white/5">
+                                <span className="text-[9px] text-slate-400 block uppercase">ไฟสูงสุด</span>
+                                <span className="text-sm font-bold text-sky-400">
+                                  {selectedStation.chargers.reduce((max, c) => Math.max(max, c.power_kw || 0), 0)} kW
+                                </span>
+                              </div>
+                              <div className="bg-white/5 rounded-lg p-2 border border-white/5">
+                                <span className="text-[9px] text-slate-400 block uppercase">กำลังไฟรวม</span>
+                                <span className="text-sm font-bold text-amber-400">
+                                  {selectedStation.chargers.reduce((sum, c) => sum + (c.power_kw || 0), 0)} kW
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Chargers breakdown */}
+                            <div className="space-y-1.5 pt-1">
+                              <span className="text-[10px] font-semibold text-slate-400 block">รายการตู้ชาร์จ:</span>
+                              <div className="space-y-1.5">
+                                {selectedStation.chargers.map((charger, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5 text-xs"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-6 h-6 rounded bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">
+                                        ⚡
+                                      </div>
+                                      <div>
+                                        <span className="font-semibold text-white block text-[11px]">
+                                          {charger.charger_type?.name || "EV Charger"}
+                                        </span>
+                                        <span className="text-[9px] text-slate-400">
+                                          {charger.plug_count || 1} หัวชาร์จ
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <span className="font-bold text-sky-400 text-xs block">
+                                        {charger.power_kw ? `${charger.power_kw} kW` : "-"}
+                                      </span>
+                                      <span className="text-[8px] text-slate-500">Fast Charging</span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="p-2.5 rounded-lg bg-white/5 border border-white/5 text-[11px] text-slate-300 leading-relaxed">
+                            <p>
+                              จุดบริการชาร์จยานยนต์ไฟฟ้าในเครือข่าย{" "}
+                              <span className="text-emerald-300 font-bold">{selectedStation.brand?.name || "EV Provider"}</span>{" "}
+                              พร้อมเปิดให้บริการชาร์จรถไฟฟ้าในพื้นที่ ต.{selectedStation.tambon} อ.{getAmphoeLabel(selectedStation.amphoe)}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {/* Details Box */}
                     {selectedStation.details && (
                       <div className="glass-card p-3 space-y-1">
@@ -908,18 +1023,26 @@ export default function LandingClient({ initialStations, session: initialSession
                   </div>
                 </div>
 
-                {/* Footer Action: Navigation */}
-                <div className="p-4 border-t" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+                {/* Footer Action: Navigation & View Full Station Page */}
+                <div className="p-4 border-t space-y-2" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
                   <a
                     href={`https://www.google.com/maps/dir/?api=1&destination=${selectedStation.latitude},${selectedStation.longitude}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full py-3 rounded-xl font-semibold text-white flex items-center justify-center gap-2 touch-target shadow-lg"
+                    className="w-full py-2.5 rounded-xl font-semibold text-white flex items-center justify-center gap-2 touch-target shadow-lg text-xs"
                     style={{ background: "linear-gradient(135deg, #0ea5e9, #00c9a7)" }}
                   >
-                    <Navigation className="w-4.5 h-4.5" />
+                    <Navigation className="w-4 h-4" />
                     นำทางด้วย Google Maps
                   </a>
+                  <Link
+                    href={`/stations/${selectedStation.id}`}
+                    className="w-full py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white flex items-center justify-center gap-1.5 border border-white/10 hover:border-white/20 transition-all touch-target"
+                    style={{ background: "rgba(255,255,255,0.04)" }}
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 text-sky-400" />
+                    ดูหน้ารายละเอียดสถานีแบบเต็ม
+                  </Link>
                 </div>
               </div>
             )}
@@ -1219,142 +1342,364 @@ export default function LandingClient({ initialStations, session: initialSession
 
         {/* 4. Responsive Mobile Bottom Sheet (Mobile View Overlay Map) */}
         <aside
-          className="lg:hidden absolute bottom-0 left-0 right-0 z-[1000] flex flex-col pointer-events-none transition-all duration-300"
+          className="lg:hidden absolute bottom-0 left-0 right-0 z-[1000] flex flex-col pointer-events-none transition-all duration-300 ease-out"
           style={{
-            height: mobileSheetHeight === "collapsed" ? "56px" : mobileSheetHeight === "half" ? "45vh" : "82vh",
+            height: mobileSheetHeight === "collapsed" ? "68px" : mobileSheetHeight === "half" ? "48vh" : "84vh",
           }}
         >
           <div
             className="w-full h-full flex flex-col pointer-events-auto rounded-t-2xl border-t shadow-2xl overflow-hidden"
             style={{
-              background: "rgba(15, 32, 68, 0.95)",
-              borderColor: "rgba(255, 255, 255, 0.1)",
-              backdropFilter: "blur(20px)",
+              background: "rgba(15, 32, 68, 0.96)",
+              borderColor: "rgba(255, 255, 255, 0.12)",
+              backdropFilter: "blur(24px)",
             }}
           >
-            {/* Sheet Handle / Drag bar */}
+            {/* Sheet Handle / Drag bar with expand/collapse control */}
             <div
-              className="h-7 w-full flex items-center justify-center flex-shrink-0 cursor-pointer"
+              className="h-7 w-full flex items-center justify-between px-4 flex-shrink-0 cursor-pointer select-none border-b border-white/5"
               onClick={() => {
                 setMobileSheetHeight((h) => (h === "collapsed" ? "half" : h === "half" ? "full" : "collapsed"));
               }}
             >
-              <div className="w-10 h-1 rounded-full bg-slate-500 opacity-60" />
+              <div className="w-8 flex items-center text-slate-400">
+                <span className="text-[10px] font-mono text-slate-500">
+                  {mobileSheetHeight === "collapsed" ? "ย่อ" : mobileSheetHeight === "half" ? "ครึ่งจอ" : "เต็มจอ"}
+                </span>
+              </div>
+              <div className="w-10 h-1 rounded-full bg-slate-500/70" />
+              <div className="w-8 flex items-center justify-end text-slate-400">
+                {mobileSheetHeight === "collapsed" ? (
+                  <ChevronUp className="w-4 h-4 text-[#0ea5e9]" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
+                )}
+              </div>
             </div>
 
-            {/* Mobile Content (re-renders the exact same views as desktop) */}
-            <div className="flex-1 overflow-hidden">
-              {/* VIEW 1: MOBILE SEARCH */}
-              {activeView === "search" && (
-                <div className="flex flex-col h-full">
-                  <div className="px-4 pb-2 border-b space-y-2" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-slate-400">ค้นหาสถานีบริการพลังงาน ({filteredStations.length})</span>
-                      {/* Add button removed */}
-                    </div>
-                    {/* Search Field */}
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                      <input
-                        type="search"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="ป้อนชื่อสถานี, อำเภอ..."
-                        className="input-dark w-full pl-9 pr-3 py-2 text-xs"
-                        style={{ borderRadius: "8px" }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Search Results List */}
-                  <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                    {filteredStations.length === 0 ? (
-                      <div className="text-center py-10 text-slate-500 text-xs">ไม่พบสถานีบริการพลังงาน</div>
-                    ) : (
-                      filteredStations.map((station) => (
-                        <div
-                          key={station.id}
-                          onClick={() => handleSelectStation(station)}
-                          className="glass-card p-3 border border-white/5"
-                          style={{ background: "rgba(255, 255, 255, 0.02)" }}
-                        >
-                          <div className="flex items-start justify-between gap-1.5">
-                            <h4 className="font-bold text-white text-xs leading-tight">{station.station_name}</h4>
-                            {"distance" in station && (
-                              <span className="text-[9px] font-bold text-[#00c9a7] bg-[#00c9a7]/10 px-1.5 py-0.5 rounded-full flex-shrink-0">
-                                {(station as any).distance.toFixed(1)} กม.
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-[9px] text-slate-400 mt-1">
-                            ต.{station.tambon} อ.{getAmphoeLabel(station.amphoe)}
-                          </p>
-                          <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
-                            <EnergyTypeBadgeList types={station.energy_types} />
-                            <span className="text-[9px] text-[#0ea5e9]">รายละเอียด &rarr;</span>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* VIEW 2: MOBILE DETAILS */}
-              {activeView === "detail" && selectedStation && (
-                <div className="flex flex-col h-full">
-                  <div className="px-4 pb-2 border-b flex items-center justify-between" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-                    <button
-                      onClick={() => handleSelectStation(null)}
-                      className="flex items-center gap-1 text-xs text-slate-400 hover:text-white"
-                    >
-                      <ArrowLeft className="w-4 h-4" />
-                      กลับ
-                    </button>
-                    <div className="flex items-center gap-1">
-                      {session && session.role !== "VIEWER" && (
-                        <button
-                          onClick={() => startEditStation(selectedStation)}
-                          className="p-1 text-slate-400 hover:text-white"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                      )}
-                      {/* Delete button removed */}
-                    </div>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                    {selectedStation.image_url && (
-                      <img
-                        src={selectedStation.image_url}
-                        alt={selectedStation.station_name}
-                        className="w-full h-32 object-cover rounded-xl border border-white/5"
-                      />
-                    )}
-                    <div>
-                      <h3 className="font-bold text-white text-sm">{selectedStation.station_name}</h3>
-                      <p className="text-[11px] text-slate-400 mt-1">
+            {/* Collapsed State Quick Preview Bar */}
+            {mobileSheetHeight === "collapsed" ? (
+              <div
+                onClick={() => setMobileSheetHeight("half")}
+                className="flex-1 px-4 flex items-center justify-between cursor-pointer active:bg-white/5 transition-colors"
+              >
+                {activeView === "detail" && selectedStation ? (
+                  <>
+                    <div className="min-w-0 pr-2">
+                      <h4 className="font-bold text-white text-xs truncate">{selectedStation.station_name}</h4>
+                      <p className="text-[10px] text-slate-400 truncate">
                         ต.{selectedStation.tambon} อ.{getAmphoeLabel(selectedStation.amphoe)}
                       </p>
                     </div>
-                    <EnergyTypeBadgeList types={selectedStation.energy_types} />
-                    {selectedStation.details && (
-                      <p className="text-xs text-slate-300 bg-white/2 p-3 rounded-xl leading-normal">{selectedStation.details}</p>
-                    )}
-                    <a
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${selectedStation.latitude},${selectedStation.longitude}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full py-3 rounded-xl font-bold text-white flex items-center justify-center gap-2 touch-target"
-                      style={{ background: "linear-gradient(135deg, #0ea5e9, #00c9a7)" }}
-                    >
-                      <Navigation className="w-4 h-4" />
-                      นำทาง
-                    </a>
+                    <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20 flex-shrink-0 flex items-center gap-1">
+                      <span>⚡</span> แตะดูข้อมูล
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 text-slate-300 text-xs truncate">
+                      <Search className="w-3.5 h-3.5 text-[#0ea5e9] flex-shrink-0" />
+                      <span className="truncate">ค้นหาสถานีพลังงาน ({filteredStations.length} แห่ง)</span>
+                    </div>
+                    <span className="text-[10px] text-sky-400 font-semibold bg-sky-500/10 px-2.5 py-1 rounded-full border border-sky-500/20 flex-shrink-0">
+                      แตะเปิดตัวกรอง
+                    </span>
+                  </>
+                )}
+              </div>
+            ) : (
+              /* Mobile Content (re-renders views when expanded) */
+              <div className="flex-1 overflow-hidden">
+                {/* VIEW 1: MOBILE SEARCH */}
+                {activeView === "search" && (
+                  <div className="flex flex-col h-full">
+                    {/* Search & Filter Header */}
+                    <div className="px-4 py-2 border-b space-y-2" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-slate-300">
+                          พบ {filteredStations.length} สถานีพลังงาน
+                        </span>
+                        {hasFiltersActive && (
+                          <button
+                            onClick={clearFilters}
+                            className="text-[10px] text-sky-400 hover:text-white"
+                          >
+                            ล้างตัวกรอง
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Search Input */}
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                        <input
+                          type="search"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder="ป้อนชื่อสถานี, ตำบล..."
+                          className="input-dark w-full pl-9 pr-3 py-2 text-xs"
+                          style={{ borderRadius: "8px" }}
+                        />
+                      </div>
+
+                      {/* District & Energy Type Filter Options for Mobile */}
+                      <div className="space-y-1.5 pt-0.5">
+                        <select
+                          value={selectedAmphoe}
+                          onChange={(e) => setSelectedAmphoe(e.target.value)}
+                          className="input-dark w-full px-3 py-1.5 text-xs"
+                          style={{ color: selectedAmphoe ? "#f1f5f9" : "#64748b", borderRadius: "8px" }}
+                        >
+                          <option value="" style={{ color: "#334155" }}>🗺 ทุกอำเภอ ใน จ.สระบุรี</option>
+                          {AMPHOE_LIST.map((a) => (
+                            <option key={a.value} value={a.value} style={{ color: "#334155" }}>{a.label}</option>
+                          ))}
+                        </select>
+
+                        <div className="flex flex-wrap gap-1">
+                          {energyTypes.length > 0
+                            ? energyTypes.map((et) => {
+                                const isActive = selectedType === et.id;
+                                return (
+                                  <button
+                                    key={et.id}
+                                    onClick={() => setSelectedType(isActive ? "" : et.id)}
+                                    className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold transition-all touch-target"
+                                    style={{
+                                      background: isActive ? `${et.map_color}33` : `${et.map_color}11`,
+                                      color: isActive ? et.map_color : "#64748b",
+                                      border: isActive ? `1px solid ${et.map_color}66` : "1px solid rgba(255,255,255,0.06)",
+                                    }}
+                                  >
+                                    <span>{et.icon}</span>
+                                    {et.name}
+                                  </button>
+                                );
+                              })
+                            : (Object.keys(ENERGY_TYPE_CONFIG) as EnergyTypeKey[]).map((type) => {
+                                const config = ENERGY_TYPE_CONFIG[type];
+                                const isActive = selectedType === type;
+                                return (
+                                  <button
+                                    key={type}
+                                    onClick={() => setSelectedType(isActive ? "" : type)}
+                                    className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold transition-all touch-target"
+                                    style={{
+                                      background: isActive ? `${config.mapColor}33` : `${config.mapColor}11`,
+                                      color: isActive ? config.mapColor : "#64748b",
+                                      border: isActive ? `1px solid ${config.mapColor}66` : "1px solid rgba(255,255,255,0.06)",
+                                    }}
+                                  >
+                                    <span>{config.icon}</span>
+                                    {config.label}
+                                  </button>
+                                );
+                              })}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Search Results List */}
+                    <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                      {filteredStations.length === 0 ? (
+                        <div className="text-center py-8 text-slate-500 text-xs">ไม่พบสถานีบริการพลังงาน</div>
+                      ) : (
+                        filteredStations.map((station) => (
+                          <div
+                            key={station.id}
+                            onClick={() => handleSelectStation(station)}
+                            className="glass-card p-3 border border-white/5 active:scale-[0.99] transition-all"
+                            style={{
+                              background: selectedStation?.id === station.id ? "rgba(14, 165, 233, 0.12)" : "rgba(255, 255, 255, 0.02)",
+                              borderColor: selectedStation?.id === station.id ? "rgba(14, 165, 233, 0.25)" : "rgba(255, 255, 255, 0.05)",
+                            }}
+                          >
+                            <div className="flex items-start justify-between gap-1.5">
+                              <h4 className="font-bold text-white text-xs leading-tight">{station.station_name}</h4>
+                              {"distance" in station && (
+                                <span className="text-[9px] font-bold text-[#00c9a7] bg-[#00c9a7]/10 px-1.5 py-0.5 rounded-full flex-shrink-0">
+                                  {(station as any).distance.toFixed(1)} กม.
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[9px] text-slate-400 mt-1">
+                              ต.{station.tambon} อ.{getAmphoeLabel(station.amphoe)}
+                            </p>
+                            <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
+                              <EnergyTypeBadgeList types={station.energy_types} />
+                              <span className="text-[9px] text-[#0ea5e9]">รายละเอียด &rarr;</span>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+
+                {/* VIEW 2: MOBILE DETAILS */}
+                {activeView === "detail" && selectedStation && (
+                  <div className="flex flex-col h-full">
+                    {/* Top control bar in detail */}
+                    <div className="px-4 py-2 border-b flex items-center justify-between" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+                      <button
+                        onClick={() => handleSelectStation(null)}
+                        className="flex items-center gap-1 text-xs text-slate-400 hover:text-white"
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                        กลับไปค้นหา
+                      </button>
+                      <div className="flex items-center gap-1">
+                        {session && session.role !== "VIEWER" && (
+                          <button
+                            onClick={() => startEditStation(selectedStation)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-white bg-white/5"
+                            title="แก้ไขข้อมูล"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                      {selectedStation.image_url ? (
+                        <img
+                          src={selectedStation.image_url}
+                          alt={selectedStation.station_name}
+                          className="w-full h-36 object-cover rounded-xl border border-white/5 shadow-md"
+                        />
+                      ) : (
+                        <div className="w-full h-24 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-3xl opacity-30">
+                          ⛽
+                        </div>
+                      )}
+
+                      <div>
+                        <h3 className="font-bold text-white text-sm leading-snug">{selectedStation.station_name}</h3>
+                        <p className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-slate-500" />
+                          ต.{selectedStation.tambon} อ.{getAmphoeLabel(selectedStation.amphoe)}
+                        </p>
+                      </div>
+
+                      {/* Energy badges */}
+                      <div className="flex flex-wrap gap-1">
+                        <EnergyTypeBadgeList types={selectedStation.energy_types} />
+                      </div>
+
+                      {/* Brand & Type */}
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="glass-card p-2 rounded-lg">
+                          <span className="text-[9px] text-slate-400 uppercase block font-medium">แบรนด์</span>
+                          <span className="font-bold text-white text-[11px] truncate block mt-0.5">
+                            {selectedStation.brand?.name || "ไม่ระบุ"}
+                          </span>
+                        </div>
+                        <div className="glass-card p-2 rounded-lg">
+                          <span className="text-[9px] text-slate-400 uppercase block font-medium">ประเภท</span>
+                          <span className="font-bold text-white text-[11px] truncate block mt-0.5">
+                            {selectedStation.station_type ? `${selectedStation.station_type.icon} ${selectedStation.station_type.name}` : selectedStation.station_type_id}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* EV Charger breakdown for Mobile */}
+                      {(selectedStation.energy_types.includes("EV") || selectedStation.has_ev_charger || (selectedStation.chargers && selectedStation.chargers.length > 0)) && (
+                        <div className="glass-card p-3 rounded-xl border border-emerald-500/25 bg-emerald-950/20 space-y-2">
+                          <div className="flex items-center justify-between border-b border-white/5 pb-1">
+                            <span className="text-xs font-bold text-emerald-400 flex items-center gap-1">
+                              ⚡ ข้อมูลตู้ชาร์จ EV
+                            </span>
+                            <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300">
+                              EV Ready
+                            </span>
+                          </div>
+
+                          {selectedStation.chargers && selectedStation.chargers.length > 0 ? (
+                            <>
+                              <div className="grid grid-cols-3 gap-1 text-center">
+                                <div className="bg-white/5 rounded-lg p-1.5 border border-white/5">
+                                  <span className="text-[8px] text-slate-400 block uppercase">หัวจ่าย</span>
+                                  <span className="text-xs font-bold text-emerald-400">
+                                    {selectedStation.chargers.reduce((acc, c) => acc + (c.plug_count || 1), 0)} หัว
+                                  </span>
+                                </div>
+                                <div className="bg-white/5 rounded-lg p-1.5 border border-white/5">
+                                  <span className="text-[8px] text-slate-400 block uppercase">ไฟสูงสุด</span>
+                                  <span className="text-xs font-bold text-sky-400">
+                                    {selectedStation.chargers.reduce((max, c) => Math.max(max, c.power_kw || 0), 0)} kW
+                                  </span>
+                                </div>
+                                <div className="bg-white/5 rounded-lg p-1.5 border border-white/5">
+                                  <span className="text-[8px] text-slate-400 block uppercase">ไฟรวม</span>
+                                  <span className="text-xs font-bold text-amber-400">
+                                    {selectedStation.chargers.reduce((sum, c) => sum + (c.power_kw || 0), 0)} kW
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="space-y-1 pt-1">
+                                {selectedStation.chargers.map((charger, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="flex items-center justify-between p-2 rounded-lg bg-white/5 text-xs"
+                                  >
+                                    <div>
+                                      <span className="font-semibold text-white block text-[11px]">
+                                        {charger.charger_type?.name || "EV Charger"}
+                                      </span>
+                                      <span className="text-[9px] text-slate-400">{charger.plug_count || 1} หัวชาร์จ</span>
+                                    </div>
+                                    <div className="text-right">
+                                      <span className="font-bold text-sky-400 text-xs block">
+                                        {charger.power_kw ? `${charger.power_kw} kW` : "-"}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </>
+                          ) : (
+                            <p className="text-[11px] text-slate-300 leading-relaxed bg-white/5 p-2 rounded-lg">
+                              จุดบริการชาร์จยานยนต์ไฟฟ้าในเครือข่าย{" "}
+                              <span className="text-emerald-300 font-bold">{selectedStation.brand?.name || "EV Provider"}</span>{" "}
+                              พร้อมเปิดให้บริการชาร์จรถไฟฟ้า
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {selectedStation.details && (
+                        <div className="glass-card p-2.5 rounded-lg space-y-0.5">
+                          <span className="text-[9px] text-slate-400 uppercase font-semibold">รายละเอียด</span>
+                          <p className="text-xs text-slate-300 leading-normal">{selectedStation.details}</p>
+                        </div>
+                      )}
+
+                      {/* Action buttons */}
+                      <div className="space-y-2 pt-1 pb-4">
+                        <a
+                          href={`https://www.google.com/maps/dir/?api=1&destination=${selectedStation.latitude},${selectedStation.longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full py-2.5 rounded-xl font-bold text-white flex items-center justify-center gap-2 touch-target text-xs shadow-md"
+                          style={{ background: "linear-gradient(135deg, #0ea5e9, #00c9a7)" }}
+                        >
+                          <Navigation className="w-4 h-4" />
+                          นำทางด้วย Google Maps
+                        </a>
+                        <Link
+                          href={`/stations/${selectedStation.id}`}
+                          className="w-full py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white flex items-center justify-center gap-1.5 border border-white/10 touch-target"
+                          style={{ background: "rgba(255,255,255,0.04)" }}
+                        >
+                          <ExternalLink className="w-3.5 h-3.5 text-sky-400" />
+                          ดูหน้ารายละเอียดสถานีแบบเต็ม
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
               {/* VIEW 3 & 4: MOBILE FORMS */}
               {(activeView === "create" || activeView === "edit") && (
@@ -1559,7 +1904,6 @@ export default function LandingClient({ initialStations, session: initialSession
             </div>
           </div>
         </aside>
-      </div>
 
       {/* ==============================
           MODAL: FLOATING AUTH LOGIN

@@ -142,7 +142,7 @@ export default function MapView({
       duration: 1.5,
       easeLinearity: 0.25,
     });
-  }, [mapReady, flyToUserLocationTrigger]);
+  }, [mapReady, flyToUserLocationTrigger, userLocation]);
 
   // Place User Location Marker
   useEffect(() => {
@@ -508,119 +508,6 @@ export default function MapView({
           )
         )}
       </div>
-
-      {/* Station Info Panel */}
-      {!hideStationPanel && selectedStation && (
-        <div
-          className="absolute bottom-16 sm:bottom-4 right-4 z-[1000] rounded-2xl overflow-hidden"
-          style={{
-            background: "rgba(15, 32, 68, 0.97)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            backdropFilter: "blur(16px)",
-            width: "300px",
-            maxHeight: "420px",
-          }}
-        >
-          {/* Image */}
-          {selectedStation.image_url && (
-            <div className="relative w-full h-36">
-              <img
-                src={selectedStation.image_url}
-                alt={selectedStation.station_name}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0f2044] to-transparent" />
-            </div>
-          )}
-
-          <div className="p-4 overflow-y-auto max-h-[300px]">
-            {/* Energy badges */}
-            <div className="flex flex-wrap gap-1 mb-2">
-              {selectedStation.energy_types.map((type) => {
-                const config = ENERGY_TYPE_CONFIG[type as EnergyTypeKey];
-                return config ? (
-                  <span
-                    key={type}
-                    className="text-xs px-2 py-0.5 rounded-full"
-                    style={{
-                      background: `${config.mapColor}22`,
-                      color: config.mapColor,
-                      border: `1px solid ${config.mapColor}44`,
-                    }}
-                  >
-                    {config.icon} {config.label}
-                  </span>
-                ) : null;
-              })}
-            </div>
-
-            <h3 className="font-bold text-white text-sm mb-1 line-clamp-2">
-              {selectedStation.station_name}
-            </h3>
-            <p className="text-xs mb-3" style={{ color: "#64748b" }}>
-              ต.{selectedStation.tambon} • {getAmphoeLabel(selectedStation.amphoe)}
-            </p>
-
-            {/* EV Chargers info if available */}
-            {selectedStation.chargers && selectedStation.chargers.length > 0 && (
-              <div className="mb-3 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs space-y-1.5">
-                <div className="font-bold flex items-center justify-between text-[11px] text-emerald-400">
-                  <span>⚡ ตู้ชาร์จ EV ({selectedStation.chargers.length} ตู้)</span>
-                  <span className="font-mono">
-                    Max {Math.max(...selectedStation.chargers.map((c) => c.power_kw))} kW
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-1 text-[10px]">
-                  {selectedStation.chargers.map((c: any, i: number) => (
-                    <span
-                      key={c.id || i}
-                      className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-200 font-medium"
-                    >
-                      {c.charger_type?.name || "EV"}: {c.power_kw}kW ({c.plug_count}หัว)
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="flex gap-2">
-              <a
-                href={`/stations/${selectedStation.id}`}
-                className="flex-1 py-2 rounded-xl text-xs font-medium text-center"
-                style={{
-                  background: "rgba(14, 165, 233, 0.15)",
-                  color: "#0ea5e9",
-                  border: "1px solid rgba(14,165,233,0.2)",
-                }}
-              >
-                รายละเอียด
-              </a>
-              <a
-                href={`https://www.google.com/maps/dir/?api=1&destination=${selectedStation.latitude},${selectedStation.longitude}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 py-2 rounded-xl text-xs font-medium text-center"
-                style={{
-                  background: "rgba(0,201,167,0.15)",
-                  color: "#00c9a7",
-                  border: "1px solid rgba(0,201,167,0.2)",
-                }}
-              >
-                นำทาง
-              </a>
-            </div>
-          </div>
-
-          {/* Close button */}
-          <button
-            onClick={() => setSelectedStation(null)}
-            className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center text-white text-lg"
-            style={{ background: "rgba(0,0,0,0.5)" }}
-          >
-            ×
-          </button>
-        </div>
-      )}
     </div>
   );
 }

@@ -30,7 +30,16 @@ export interface Station {
   image_url: string | null;
   google_map_url: string | null;
   has_ev_charger?: boolean;
-  chargers?: { charger_type_id: string; power_kw: number; plug_count: number }[];
+  chargers?: {
+    id?: string;
+    charger_type_id: string;
+    charger_type?: {
+      id: string;
+      name: string;
+    };
+    power_kw: number;
+    plug_count: number;
+  }[];
   created_at: string | Date;
   updated_at: string | Date;
 }
