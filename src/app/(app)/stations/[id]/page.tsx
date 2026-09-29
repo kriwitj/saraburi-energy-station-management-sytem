@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { MapPin, FileText, Calendar, Pencil, ArrowLeft, ExternalLink } from "lucide-react";
+import { MapPin, FileText, Calendar, Pencil, ArrowLeft, ExternalLink, Zap } from "lucide-react";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 import { EnergyTypeBadgeList } from "@/components/shared/EnergyTypeBadge";
@@ -23,12 +23,25 @@ export default async function StationDetailPage({
   const { id } = await params;
   const station = await prisma.station.findUnique({
     where: { id },
-    include: { brand: true, station_type: true },
+    include: {
+      brand: true,
+      station_type: true,
+      chargers: {
+        include: {
+          charger_type: true,
+        },
+      },
+    },
   });
   if (!station) notFound();
 
   const mapsUrl = station.google_map_url || `https://www.google.com/maps?q=${station.latitude},${station.longitude}`;
   const navUrl = station.google_map_url || `https://www.google.com/maps/dir/?api=1&destination=${station.latitude},${station.longitude}`;
+
+  const hasChargers = station.chargers && station.chargers.length > 0;
+  const totalPlugs = hasChargers ? station.chargers.reduce((acc, c) => acc + (c.plug_count || 1), 0) : 0;
+  const maxKw = hasChargers ? Math.max(...station.chargers.map((c) => c.power_kw || 0)) : 0;
+  const totalKw = hasChargers ? station.chargers.reduce((acc, c) => acc + (c.power_kw || 0), 0) : 0;
 
   return (
     <div className="p-4 lg:p-6 max-w-2xl mx-auto space-y-4">
@@ -109,6 +122,73 @@ export default async function StationDetailPage({
             </span>
           </div>
         </div>
+
+        {/* EV Charging Detailed Section */}
+        {hasChargers && (
+          <div className="rounded-2xl p-4 space-y-3 bg-gradient-to-br from-emerald-950/40 to-slate-900/40 border border-emerald-500/30">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-bold text-emerald-400 flex items-center gap-1.5">
+                <Zap className="w-4 h-4 text-emerald-400" /> ข้อมูลหัวชาร์จรถยนต์ไฟฟ้า (EV)
+              </h2>
+              <span className="text-xs text-emerald-300 font-semibold bg-emerald-500/20 border border-emerald-500/30 px-2.5 py-0.5 rounded-full">
+                รวม {totalPlugs} หัวชาร์จ
+              </span>
+            </div>
+
+            {/* Metrics Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center pt-1">
+              <div className="bg-white/5 rounded-xl p-2.5 border border-white/5">
+                <span className="text-[10px] text-slate-400 block uppercase font-medium">ตู้ชาร์จ</span>
+                <span className="text-base font-bold text-white">{station.chargers.length} ตู้</span>
+              </div>
+              <div className="bg-white/5 rounded-xl p-2.5 border border-white/5">
+                <span className="text-[10px] text-slate-400 block uppercase font-medium">หัวจ่ายไฟ</span>
+                <span className="text-base font-bold text-emerald-400">{totalPlugs} หัว</span>
+              </div>
+              <div className="bg-white/5 rounded-xl p-2.5 border border-white/5">
+                <span className="text-[10px] text-slate-400 block uppercase font-medium">กำลังไฟสูงสุด</span>
+                <span className="text-base font-bold text-sky-400">{maxKw} kW</span>
+              </div>
+              <div className="bg-white/5 rounded-xl p-2.5 border border-white/5">
+                <span className="text-[10px] text-slate-400 block uppercase font-medium">กำลังไฟรวม</span>
+                <span className="text-base font-bold text-amber-400">{totalKw} kW</span>
+              </div>
+            </div>
+
+            {/* Units breakdown */}
+            <div className="space-y-2 pt-1">
+              <span className="text-xs font-semibold text-slate-300 block">รายละเอียดตู้ชาร์จ:</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {station.chargers.map((charger, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 hover:border-emerald-500/30 transition-all"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm">
+                        ⚡
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-white block">
+                          {charger.charger_type?.name || "EV Charger"}
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          {charger.plug_count || 1} หัวจ่าย
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs font-bold text-sky-400 block">
+                        {charger.power_kw ? `${charger.power_kw} kW` : "-"}
+                      </span>
+                      <span className="text-[9px] text-slate-500">Fast Charging</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {station.details && (
           <div className="flex gap-3">
