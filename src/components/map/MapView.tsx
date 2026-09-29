@@ -489,25 +489,6 @@ export default function MapView({
           )}
         </div>
       </div>
-
-      {/* Legend */}
-      <div
-        className="hidden lg:flex absolute bottom-4 left-[396px] z-[990] p-3 rounded-xl text-xs flex-col"
-        style={{
-          background: "rgba(15, 32, 68, 0.95)",
-          border: "1px solid rgba(255,255,255,0.1)",
-          backdropFilter: "blur(12px)",
-        }}
-      >
-        {(Object.entries(ENERGY_TYPE_CONFIG) as [EnergyTypeKey, (typeof ENERGY_TYPE_CONFIG)[EnergyTypeKey]][]).map(
-          ([key, config]) => (
-            <div key={key} className="flex items-center gap-2 mb-1 last:mb-0">
-              <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: config.mapColor }} />
-              <span style={{ color: "#94a3b8" }}>{config.label}</span>
-            </div>
-          )
-        )}
-      </div>
     </div>
   );
 }
