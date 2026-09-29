@@ -25,6 +25,7 @@ export default function DashboardClient({ userRole }: DashboardClientProps) {
   const [search, setSearch] = useState("");
   const [amphoe, setAmphoe] = useState("");
   const [energyType, setEnergyType] = useState("");
+  const [chargerType, setChargerType] = useState("");
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const limit = 20;
@@ -217,19 +218,31 @@ export default function DashboardClient({ userRole }: DashboardClientProps) {
   }
 
   const [energyTypes, setEnergyTypes] = useState<{ id: string; name: string; icon: string; map_color: string }[]>([]);
+  const [chargerTypes, setChargerTypes] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
-    async function loadEts() {
+    async function loadMetadata() {
       try {
-        const res = await fetch("/api/energy-types");
-        const data = await res.json();
-        if (data.data) setEnergyTypes(data.data);
+        const [etsRes, ctsRes] = await Promise.all([
+          fetch("/api/energy-types"),
+          fetch("/api/charger-types"),
+        ]);
+        const [etsData, ctsData] = await Promise.all([etsRes.json(), ctsRes.json()]);
+        if (etsData.data) setEnergyTypes(etsData.data);
+        if (ctsData.data) setChargerTypes(ctsData.data);
       } catch (err) {
-        console.error("Failed to load energy types in dashboard:", err);
+        console.error("Failed to load metadata in dashboard:", err);
       }
     }
-    loadEts();
+    loadMetadata();
   }, []);
+
+  const handleEnergyTypeChange = (val: string) => {
+    setEnergyType(val);
+    if (val !== "EV") {
+      setChargerType("");
+    }
+  };
 
   const fetchStations = useCallback(async () => {
     setLoading(true);
@@ -240,6 +253,7 @@ export default function DashboardClient({ userRole }: DashboardClientProps) {
         ...(search && { search }),
         ...(amphoe && { amphoe }),
         ...(energyType && { energy_type: energyType }),
+        ...(chargerType && { charger_type: chargerType }),
       });
       const res = await fetch(`/api/stations?${params}`);
       const data = await res.json();
@@ -249,7 +263,7 @@ export default function DashboardClient({ userRole }: DashboardClientProps) {
     } finally {
       setLoading(false);
     }
-  }, [search, amphoe, energyType, page]);
+  }, [search, amphoe, energyType, chargerType, page]);
 
   useEffect(() => {
     const timer = setTimeout(fetchStations, 300);
@@ -257,7 +271,7 @@ export default function DashboardClient({ userRole }: DashboardClientProps) {
   }, [fetchStations]);
 
   // Reset page when filters change
-  useEffect(() => { setPage(1); }, [search, amphoe, energyType]);
+  useEffect(() => { setPage(1); }, [search, amphoe, energyType, chargerType]);
 
   const totalPages = Math.ceil(total / limit);
 
@@ -379,8 +393,11 @@ export default function DashboardClient({ userRole }: DashboardClientProps) {
           amphoe={amphoe}
           onAmphoeChange={setAmphoe}
           energyType={energyType}
-          onEnergyTypeChange={setEnergyType}
+          onEnergyTypeChange={handleEnergyTypeChange}
+          chargerType={chargerType}
+          onChargerTypeChange={setChargerType}
           energyTypes={energyTypes}
+          chargerTypes={chargerTypes}
         />
 
         <div className="flex items-center justify-between border-t border-slate-100 pt-3">
