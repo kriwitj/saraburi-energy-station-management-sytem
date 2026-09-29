@@ -39,6 +39,7 @@ export default async function StationDetailPage({
   const navUrl = station.google_map_url || `https://www.google.com/maps/dir/?api=1&destination=${station.latitude},${station.longitude}`;
 
   const hasChargers = station.chargers && station.chargers.length > 0;
+  const isEvStation = Boolean(station.has_ev_charger || (station.energy_types || []).includes("EV") || station.station_type_id === "CHARGING_HUB");
   const totalPlugs = hasChargers ? station.chargers.reduce((acc, c) => acc + (c.plug_count || 1), 0) : 0;
   const maxKw = hasChargers ? Math.max(...station.chargers.map((c) => c.power_kw || 0)) : 0;
   const totalKw = hasChargers ? station.chargers.reduce((acc, c) => acc + (c.power_kw || 0), 0) : 0;
@@ -49,7 +50,7 @@ export default async function StationDetailPage({
       <div className="flex items-center justify-between">
         <Link href={session ? "/dashboard" : "/"} className="flex items-center gap-2 text-sm touch-target" style={{ color: "#94a3b8" }}>
           <ArrowLeft className="w-4 h-4" />
-          กลับ
+          {session ? "กลับไปหน้า Dashboard" : "กลับไปหน้าแรกแผนที่"}
         </Link>
         <div className="flex items-center gap-2">
           {session && session.role !== "VIEWER" && (
@@ -124,69 +125,85 @@ export default async function StationDetailPage({
         </div>
 
         {/* EV Charging Detailed Section */}
-        {hasChargers && (
+        {isEvStation && (
           <div className="rounded-2xl p-4 space-y-3 bg-gradient-to-br from-emerald-950/40 to-slate-900/40 border border-emerald-500/30">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-bold text-emerald-400 flex items-center gap-1.5">
                 <Zap className="w-4 h-4 text-emerald-400" /> ข้อมูลหัวชาร์จรถยนต์ไฟฟ้า (EV)
               </h2>
               <span className="text-xs text-emerald-300 font-semibold bg-emerald-500/20 border border-emerald-500/30 px-2.5 py-0.5 rounded-full">
-                รวม {totalPlugs} หัวชาร์จ
+                {hasChargers ? `รวม ${totalPlugs} หัวชาร์จ` : "จุดบริการชาร์จ EV"}
               </span>
             </div>
 
-            {/* Metrics Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center pt-1">
-              <div className="bg-white/5 rounded-xl p-2.5 border border-white/5">
-                <span className="text-[10px] text-slate-400 block uppercase font-medium">ตู้ชาร์จ</span>
-                <span className="text-base font-bold text-white">{station.chargers.length} ตู้</span>
-              </div>
-              <div className="bg-white/5 rounded-xl p-2.5 border border-white/5">
-                <span className="text-[10px] text-slate-400 block uppercase font-medium">หัวจ่ายไฟ</span>
-                <span className="text-base font-bold text-emerald-400">{totalPlugs} หัว</span>
-              </div>
-              <div className="bg-white/5 rounded-xl p-2.5 border border-white/5">
-                <span className="text-[10px] text-slate-400 block uppercase font-medium">กำลังไฟสูงสุด</span>
-                <span className="text-base font-bold text-sky-400">{maxKw} kW</span>
-              </div>
-              <div className="bg-white/5 rounded-xl p-2.5 border border-white/5">
-                <span className="text-[10px] text-slate-400 block uppercase font-medium">กำลังไฟรวม</span>
-                <span className="text-base font-bold text-amber-400">{totalKw} kW</span>
-              </div>
-            </div>
-
-            {/* Units breakdown */}
-            <div className="space-y-2 pt-1">
-              <span className="text-xs font-semibold text-slate-300 block">รายละเอียดตู้ชาร์จ:</span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {station.chargers.map((charger, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 hover:border-emerald-500/30 transition-all"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm">
-                        ⚡
-                      </div>
-                      <div>
-                        <span className="text-xs font-bold text-white block">
-                          {charger.charger_type?.name || "EV Charger"}
-                        </span>
-                        <span className="text-[10px] text-slate-400">
-                          {charger.plug_count || 1} หัวจ่าย
-                        </span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-xs font-bold text-sky-400 block">
-                        {charger.power_kw ? `${charger.power_kw} kW` : "-"}
-                      </span>
-                      <span className="text-[9px] text-slate-500">Fast Charging</span>
-                    </div>
+            {hasChargers ? (
+              <>
+                {/* Metrics Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center pt-1">
+                  <div className="bg-white/5 rounded-xl p-2.5 border border-white/5">
+                    <span className="text-[10px] text-slate-400 block uppercase font-medium">ตู้ชาร์จ</span>
+                    <span className="text-base font-bold text-white">{station.chargers.length} ตู้</span>
                   </div>
-                ))}
+                  <div className="bg-white/5 rounded-xl p-2.5 border border-white/5">
+                    <span className="text-[10px] text-slate-400 block uppercase font-medium">หัวจ่ายไฟ</span>
+                    <span className="text-base font-bold text-emerald-400">{totalPlugs} หัว</span>
+                  </div>
+                  <div className="bg-white/5 rounded-xl p-2.5 border border-white/5">
+                    <span className="text-[10px] text-slate-400 block uppercase font-medium">กำลังไฟสูงสุด</span>
+                    <span className="text-base font-bold text-sky-400">{maxKw} kW</span>
+                  </div>
+                  <div className="bg-white/5 rounded-xl p-2.5 border border-white/5">
+                    <span className="text-[10px] text-slate-400 block uppercase font-medium">กำลังไฟรวม</span>
+                    <span className="text-base font-bold text-amber-400">{totalKw} kW</span>
+                  </div>
+                </div>
+
+                {/* Units breakdown */}
+                <div className="space-y-2 pt-1">
+                  <span className="text-xs font-semibold text-slate-300 block">รายละเอียดตู้ชาร์จ:</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {station.chargers.map((charger, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 hover:border-emerald-500/30 transition-all"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm">
+                            ⚡
+                          </div>
+                          <div>
+                            <span className="text-xs font-bold text-white block">
+                              {charger.charger_type?.name || "EV Charger"}
+                            </span>
+                            <span className="text-[10px] text-slate-400">
+                              {charger.plug_count || 1} หัวจ่าย
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-xs font-bold text-sky-400 block">
+                            {charger.power_kw ? `${charger.power_kw} kW` : "-"}
+                          </span>
+                          <span className="text-[9px] text-slate-500">Fast Charging</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 text-xs space-y-1.5">
+                <div className="flex items-center gap-2 text-slate-200 font-semibold">
+                  <span className="text-emerald-400">⚡</span>
+                  <span>สถานีบริการชาร์จยานยนต์ไฟฟ้า (EV Charging)</span>
+                </div>
+                <p className="text-slate-400 text-xs leading-relaxed">
+                  สถานีนี้เป็นจุดบริการชาร์จรถยนต์ไฟฟ้าในเครือข่าย{" "}
+                  <span className="text-emerald-300 font-bold">{station.brand?.name || "EV Provider"}</span>{" "}
+                  พร้อมเปิดให้บริการสำหรับยานยนต์ไฟฟ้าในพื้นที่ ต.{station.tambon} อ.{getAmphoeLabel(station.amphoe)}
+                </p>
               </div>
-            </div>
+            )}
           </div>
         )}
 

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { getSession } from "@/lib/session";
 import Navbar from "@/components/layout/Navbar";
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
@@ -9,8 +10,20 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const session = await getSession();
-  if (!session) {
+  const headerList = await headers();
+  const pathname = headerList.get("x-pathname") || "";
+  const isPublicStation = pathname.startsWith("/stations/") && !pathname.endsWith("/edit") && pathname !== "/stations/new";
+
+  if (!session && !isPublicStation) {
     redirect("/login");
+  }
+
+  if (!session) {
+    return (
+      <div className="min-h-screen text-slate-100" style={{ background: "#0a1628" }}>
+        {children}
+      </div>
+    );
   }
 
   return (
