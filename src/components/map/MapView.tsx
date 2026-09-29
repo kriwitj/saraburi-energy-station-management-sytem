@@ -11,9 +11,11 @@ import {
   ENERGY_TYPE_CONFIG,
   getAmphoeLabel,
   type EnergyTypeKey,
-  CARTO_BASEMAP_URL,
+  MAP_BASEMAPS,
+  DEFAULT_BASEMAP,
 } from "@/lib/constants";
 import type { Amphoe } from "@prisma/client";
+import { Layers } from "lucide-react";
 
 interface MapViewProps {
   stations: Station[];
@@ -35,9 +37,14 @@ export default function MapView({
   const mapRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const leafletMapRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tileLayerRef = useRef<any>(null);
+
   const [selectedAmphoe, setSelectedAmphoe] = useState<string>("");
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [mapReady, setMapReady] = useState(false);
+  const [activeBasemap, setActiveBasemap] = useState<string>("GOOGLE_THAI");
+  const [showBasemapMenu, setShowBasemapMenu] = useState(false);
 
   // Sync external selection
   useEffect(() => {
@@ -76,42 +83,31 @@ export default function MapView({
       if (!userLocation) return;
 
       const userIcon = L.divIcon({
-        className: "",
+        className: "custom-user-marker",
         html: `
-          <div style="
-            position: relative;
-            width: 18px;
-            height: 18px;
-            background: #0ea5e9;
-            border: 3px solid white;
-            border-radius: 50%;
-            box-shadow: 0 0 10px rgba(14, 165, 233, 0.8);
-          ">
-            <div class="pulse-ring" style="
-              position: absolute;
-              left: -3px;
-              top: -3px;
-              width: 18px;
-              height: 18px;
-              border-radius: 50%;
-            "></div>
+          <div style="position: relative; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+            <div style="position: absolute; width: 24px; height: 24px; border-radius: 50%; background: rgba(14, 165, 233, 0.35); animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+            <div style="width: 14px; height: 14px; border-radius: 50%; background: #0ea5e9; border: 2.5px solid white; box-shadow: 0 0 10px rgba(14, 165, 233, 0.8); z-index: 10;"></div>
           </div>
         `,
-        iconSize: [18, 18],
-        iconAnchor: [9, 9],
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
       });
 
       L.marker(userLocation, {
         icon: userIcon,
         // @ts-expect-error - custom option
         isUserLocationMarker: true,
-      }).addTo(map);
-
-      // Pan to user location when it first arrives
-      map.flyTo(userLocation, 14, { duration: 1.5 });
+      })
+        .addTo(map)
+        .bindPopup(
+          `<div style="font-size: 12px; font-weight: bold; color: #0f172a; text-align: center; padding: 4px;">📍 ตำแหน่งของคุณ</div>`,
+          { closeButton: false }
+        );
     });
   }, [mapReady, userLocation]);
 
+  // Initialize Map
   useEffect(() => {
     if (!mapRef.current || leafletMapRef.current) return;
 
@@ -135,10 +131,12 @@ export default function MapView({
         wheelPxPerZoomLevel: 150,
       });
 
-      L.tileLayer(CARTO_BASEMAP_URL, {
-        maxZoom: 19,
-        subdomains: "abcd",
+      const initialBase = MAP_BASEMAPS[activeBasemap] || DEFAULT_BASEMAP;
+      const tileLayer = L.tileLayer(initialBase.url, {
+        maxZoom: initialBase.maxZoom,
+        subdomains: initialBase.subdomains,
       }).addTo(map);
+      tileLayerRef.current = tileLayer;
 
       // Add zoom control at bottomright (Google Maps style)
       L.control.zoom({ position: "bottomright" }).addTo(map);
@@ -169,6 +167,27 @@ export default function MapView({
     };
   }, []);
 
+  // Switch Basemap dynamically
+  useEffect(() => {
+    if (!mapReady || !leafletMapRef.current) return;
+
+    import("leaflet").then((L) => {
+      const map = leafletMapRef.current;
+      if (tileLayerRef.current) {
+        map.removeLayer(tileLayerRef.current);
+      }
+
+      const selectedBase = MAP_BASEMAPS[activeBasemap] || DEFAULT_BASEMAP;
+      const newTileLayer = L.tileLayer(selectedBase.url, {
+        maxZoom: selectedBase.maxZoom,
+        subdomains: selectedBase.subdomains,
+      }).addTo(map);
+
+      newTileLayer.bringToBack();
+      tileLayerRef.current = newTileLayer;
+    });
+  }, [activeBasemap, mapReady]);
+
   // Place markers
   useEffect(() => {
     if (!mapReady || !leafletMapRef.current) return;
@@ -180,48 +199,59 @@ export default function MapView({
             label: et.name,
             icon: et.icon,
             mapColor: et.map_color,
-            showIcon: et.show_icon !== undefined ? et.show_icon : true,
+            showIcon: et.show_icon !== false,
           };
           return acc;
-        }, {} as any)
+        }, {} as Record<string, { label: string; icon: string; mapColor: string; showIcon?: boolean }>)
       : null;
 
     import("leaflet").then((L) => {
       const map = leafletMapRef.current;
-      // Remove old markers
-      map.eachLayer((layer: unknown) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if ((layer as any).options?.isStationMarker) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          map.removeLayer(layer as any);
+
+      // Remove existing markers
+      map.eachLayer((layer: any) => {
+        if (layer.options?.isStationMarker) {
+          map.removeLayer(layer);
         }
       });
 
       stations.forEach((station) => {
-        // Determine color from selectedType or first energy type
-        const highlightType = (selectedType && station.energy_types.includes(selectedType))
-          ? selectedType
-          : (station.energy_types[0] || "OIL");
+        // Filter by energy type if specified
+        if (selectedType && !station.energy_types.includes(selectedType)) {
+          return;
+        }
 
-        const config = dynamicConfigs?.[highlightType]
-          || ENERGY_TYPE_CONFIG[highlightType as EnergyTypeKey];
+        // Determine pin appearance
+        const primaryType = station.energy_types[0] as EnergyTypeKey;
+        const config = dynamicConfigs
+          ? (dynamicConfigs[primaryType] || { label: primaryType, icon: "📍", mapColor: "#64748b", showIcon: false })
+          : (ENERGY_TYPE_CONFIG[primaryType] || { label: primaryType, icon: "📍", mapColor: "#64748b", showIcon: false });
 
-        const color = config?.mapColor ?? config?.map_color ?? "#64748b";
-        const iconSymbol = config?.icon ?? "⛽";
-        
-        // Use showIcon from database config: if true, show symbol inside 22px circle. Else show 12px dot.
-        const shouldShowIcon = config?.showIcon !== undefined ? config.showIcon : true;
+        const isChargingHub = station.station_type_id === "CHARGING_HUB";
+        const hasEv = station.energy_types.includes("EV");
+        const isOil = station.energy_types.includes("OIL");
 
-        const size = shouldShowIcon ? 22 : 12;
+        let color = config.mapColor;
+        let iconSymbol = config.icon;
+
+        if (isChargingHub) {
+          color = "#00c9a7";
+          iconSymbol = "⚡";
+        } else if (hasEv && isOil) {
+          color = "#0ea5e9";
+        }
+
+        const showIconOnMarker = config.showIcon !== false;
+        const size = showIconOnMarker ? 24 : 14;
         const radius = size / 2;
 
-        const htmlContent = shouldShowIcon
+        const htmlContent = showIconOnMarker
           ? `<div style="
               width: ${size}px;
               height: ${size}px;
               border-radius: 50%;
               background: ${color};
-              border: 1.5px solid white;
+              border: 2px solid white;
               box-shadow: 0 2px 5px rgba(0,0,0,0.4);
               display: flex;
               align-items: center;
@@ -293,9 +323,8 @@ export default function MapView({
             style={{
               background: "rgba(15, 32, 68, 0.95)",
               border: "1px solid rgba(255,255,255,0.15)",
-              color: "#f1f5f9",
+              color: selectedAmphoe ? "#f1f5f9" : "#94a3b8",
               backdropFilter: "blur(12px)",
-              minWidth: "160px",
             }}
           >
             <option value="" style={{ color: "#334155" }}>🗺 ทุกอำเภอ</option>
@@ -305,26 +334,88 @@ export default function MapView({
           </select>
         </div>
 
+        {/* Basemap Style Switcher Dropdown */}
+        <div className="pointer-events-auto relative">
+          <button
+            type="button"
+            onClick={() => setShowBasemapMenu(!showBasemapMenu)}
+            className="flex items-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-semibold touch-target transition-all"
+            style={{
+              background: "rgba(15, 32, 68, 0.95)",
+              border: "1px solid rgba(255,255,255,0.15)",
+              color: "#f1f5f9",
+              backdropFilter: "blur(12px)",
+            }}
+            title="เปลี่ยนรูปแบบแผนที่"
+          >
+            <Layers className="w-4 h-4 text-sky-400" />
+            <span className="hidden sm:inline">
+              {MAP_BASEMAPS[activeBasemap]?.name || "รูปแบบแผนที่"}
+            </span>
+          </button>
+
+          {showBasemapMenu && (
+            <div
+              className="absolute left-0 mt-1.5 w-56 rounded-xl shadow-xl border overflow-hidden z-[1100] animate-in fade-in duration-150"
+              style={{
+                background: "rgba(15, 32, 68, 0.98)",
+                borderColor: "rgba(255, 255, 255, 0.15)",
+                backdropFilter: "blur(16px)",
+              }}
+            >
+              <div className="px-3 py-2 border-b border-white/10 text-[10px] font-bold uppercase text-slate-400">
+                เลือกรูปแบบแผนที่
+              </div>
+              <div className="p-1 space-y-0.5">
+                {Object.entries(MAP_BASEMAPS).map(([key, opt]) => {
+                  const isSelected = activeBasemap === key;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => {
+                        setActiveBasemap(key);
+                        setShowBasemapMenu(false);
+                      }}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium flex items-center justify-between transition-colors ${
+                        isSelected
+                          ? "bg-sky-500/20 text-sky-400 font-bold border border-sky-500/30"
+                          : "text-slate-300 hover:bg-white/5 hover:text-white"
+                      }`}
+                    >
+                      <span>{opt.name}</span>
+                      {isSelected && <span className="text-sky-400 text-xs">✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Station count */}
-        <div className="pointer-events-none px-3 py-2 rounded-xl text-sm font-medium"
+        <div
+          className="pointer-events-none px-3 py-2 rounded-xl text-sm font-medium"
           style={{
             background: "rgba(15, 32, 68, 0.95)",
             border: "1px solid rgba(255,255,255,0.1)",
             color: "#94a3b8",
             backdropFilter: "blur(12px)",
             alignSelf: "flex-start",
-          }}>
+          }}
+        >
           📍 {stations.length} สถานี
         </div>
       </div>
 
       {/* Legend */}
-      <div className="absolute bottom-16 sm:bottom-4 left-4 z-[1000] p-3 rounded-xl text-xs"
+      <div
+        className="absolute bottom-16 sm:bottom-4 left-4 z-[1000] p-3 rounded-xl text-xs"
         style={{
           background: "rgba(15, 32, 68, 0.95)",
           border: "1px solid rgba(255,255,255,0.1)",
           backdropFilter: "blur(12px)",
-        }}>
+        }}
+      >
         {(Object.entries(ENERGY_TYPE_CONFIG) as [EnergyTypeKey, (typeof ENERGY_TYPE_CONFIG)[EnergyTypeKey]][]).map(
           ([key, config]) => (
             <div key={key} className="flex items-center gap-2 mb-1 last:mb-0">
@@ -343,8 +434,8 @@ export default function MapView({
             background: "rgba(15, 32, 68, 0.97)",
             border: "1px solid rgba(255,255,255,0.1)",
             backdropFilter: "blur(16px)",
-            width: "280px",
-            maxHeight: "380px",
+            width: "300px",
+            maxHeight: "420px",
           }}
         >
           {/* Image */}
@@ -359,14 +450,21 @@ export default function MapView({
             </div>
           )}
 
-          <div className="p-4">
+          <div className="p-4 overflow-y-auto max-h-[300px]">
             {/* Energy badges */}
             <div className="flex flex-wrap gap-1 mb-2">
               {selectedStation.energy_types.map((type) => {
                 const config = ENERGY_TYPE_CONFIG[type as EnergyTypeKey];
                 return config ? (
-                  <span key={type} className="text-xs px-2 py-0.5 rounded-full"
-                    style={{ background: `${config.mapColor}22`, color: config.mapColor, border: `1px solid ${config.mapColor}44` }}>
+                  <span
+                    key={type}
+                    className="text-xs px-2 py-0.5 rounded-full"
+                    style={{
+                      background: `${config.mapColor}22`,
+                      color: config.mapColor,
+                      border: `1px solid ${config.mapColor}44`,
+                    }}
+                  >
                     {config.icon} {config.label}
                   </span>
                 ) : null;
@@ -380,17 +478,51 @@ export default function MapView({
               ต.{selectedStation.tambon} • {getAmphoeLabel(selectedStation.amphoe)}
             </p>
 
+            {/* EV Chargers info if available */}
+            {selectedStation.chargers && selectedStation.chargers.length > 0 && (
+              <div className="mb-3 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs space-y-1.5">
+                <div className="font-bold flex items-center justify-between text-[11px] text-emerald-400">
+                  <span>⚡ ตู้ชาร์จ EV ({selectedStation.chargers.length} ตู้)</span>
+                  <span className="font-mono">
+                    Max {Math.max(...selectedStation.chargers.map((c) => c.power_kw))} kW
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1 text-[10px]">
+                  {selectedStation.chargers.map((c, i) => (
+                    <span
+                      key={c.id || i}
+                      className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-200 font-medium"
+                    >
+                      {c.charger_type?.name || "EV"}: {c.power_kw}kW ({c.plug_count}หัว)
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="flex gap-2">
-              <a href={`/stations/${selectedStation.id}`}
+              <a
+                href={`/stations/${selectedStation.id}`}
                 className="flex-1 py-2 rounded-xl text-xs font-medium text-center"
-                style={{ background: "rgba(14, 165, 233, 0.15)", color: "#0ea5e9", border: "1px solid rgba(14,165,233,0.2)" }}>
+                style={{
+                  background: "rgba(14, 165, 233, 0.15)",
+                  color: "#0ea5e9",
+                  border: "1px solid rgba(14,165,233,0.2)",
+                }}
+              >
                 รายละเอียด
               </a>
               <a
                 href={`https://www.google.com/maps/dir/?api=1&destination=${selectedStation.latitude},${selectedStation.longitude}`}
-                target="_blank" rel="noopener noreferrer"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex-1 py-2 rounded-xl text-xs font-medium text-center"
-                style={{ background: "rgba(0,201,167,0.15)", color: "#00c9a7", border: "1px solid rgba(0,201,167,0.2)" }}>
+                style={{
+                  background: "rgba(0,201,167,0.15)",
+                  color: "#00c9a7",
+                  border: "1px solid rgba(0,201,167,0.2)",
+                }}
+              >
                 นำทาง
               </a>
             </div>
