@@ -724,56 +724,89 @@ export default function LandingClient({ initialStations, session: initialSession
                       ))}
                     </select>
 
-                    <div className="flex flex-wrap gap-1">
-                      {energyTypes.length > 0
-                        ? energyTypes.map((et) => {
-                            const isActive = selectedType === et.id;
-                            return (
-                              <button
-                                key={et.id}
-                                onClick={() => setSelectedType(isActive ? "" : et.id)}
-                                className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all touch-target"
-                                style={{
-                                  background: isActive ? `${et.map_color}33` : `${et.map_color}11`,
-                                  color: isActive ? et.map_color : "#64748b",
-                                  border: isActive ? `1px solid ${et.map_color}66` : "1px solid rgba(255,255,255,0.06)",
-                                }}
-                              >
-                                <span>{et.icon}</span>
-                                {et.name}
-                              </button>
-                            );
-                          })
-                        : (Object.keys(ENERGY_TYPE_CONFIG) as EnergyTypeKey[]).map((type) => {
-                            const config = ENERGY_TYPE_CONFIG[type];
-                            const isActive = selectedType === type;
-                            return (
-                              <button
-                                key={type}
-                                onClick={() => setSelectedType(isActive ? "" : type)}
-                                className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all touch-target"
-                                style={{
-                                  background: isActive ? `${config.mapColor}33` : `${config.mapColor}11`,
-                                  color: isActive ? config.mapColor : "#64748b",
-                                  border: isActive ? `1px solid ${config.mapColor}66` : "1px solid rgba(255,255,255,0.06)",
-                                }}
-                              >
-                                <span>{config.icon}</span>
-                                {config.label}
-                              </button>
-                            );
-                          })}
+                    {/* Map Marker Legend & Type Filters (สัญลักษณ์จุดบนแผนที่ & ตัวกรอง) */}
+                    <div className="space-y-1.5 pt-1">
+                      <div className="flex items-center justify-between text-[11px] text-slate-300">
+                        <span className="font-semibold flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-[#0ea5e9] animate-pulse" />
+                          สัญลักษณ์จุดบนแผนที่ (แตะเพื่อกรอง):
+                        </span>
+                        {hasFiltersActive && (
+                          <button
+                            onClick={clearFilters}
+                            className="text-[10px] text-sky-400 hover:text-white transition-colors"
+                          >
+                            ล้างตัวกรอง
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {energyTypes.length > 0
+                          ? energyTypes.map((et) => {
+                              const isActive = selectedType === et.id;
+                              return (
+                                <button
+                                  key={et.id}
+                                  onClick={() => setSelectedType(isActive ? "" : et.id)}
+                                  className={`flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-semibold transition-all touch-target border text-left ${
+                                    isActive
+                                      ? "shadow-md ring-1 ring-white/20"
+                                      : "hover:bg-white/5"
+                                  }`}
+                                  style={{
+                                    background: isActive ? `${et.map_color}25` : "rgba(255, 255, 255, 0.03)",
+                                    borderColor: isActive ? et.map_color : "rgba(255, 255, 255, 0.08)",
+                                    color: isActive ? "#ffffff" : "#cbd5e1",
+                                  }}
+                                  title={`จุดสี ${et.name} บนแผนที่ (คลิกเพื่อกรอง)`}
+                                >
+                                  {/* Marker point dot */}
+                                  <span
+                                    className="w-3 h-3 rounded-full flex-shrink-0 shadow-sm ring-2 ring-white/20"
+                                    style={{ background: et.map_color }}
+                                  />
+                                  <span className="truncate flex items-center gap-1">
+                                    <span>{et.icon}</span>
+                                    <span>{et.name}</span>
+                                  </span>
+                                </button>
+                              );
+                            })
+                          : (Object.keys(ENERGY_TYPE_CONFIG) as EnergyTypeKey[]).map((type) => {
+                              const config = ENERGY_TYPE_CONFIG[type];
+                              const isActive = selectedType === type;
+                              return (
+                                <button
+                                  key={type}
+                                  onClick={() => setSelectedType(isActive ? "" : type)}
+                                  className={`flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-semibold transition-all touch-target border text-left ${
+                                    isActive
+                                      ? "shadow-md ring-1 ring-white/20"
+                                      : "hover:bg-white/5"
+                                  }`}
+                                  style={{
+                                    background: isActive ? `${config.mapColor}25` : "rgba(255, 255, 255, 0.03)",
+                                    borderColor: isActive ? config.mapColor : "rgba(255, 255, 255, 0.08)",
+                                    color: isActive ? "#ffffff" : "#cbd5e1",
+                                  }}
+                                  title={`จุดสี ${config.label} บนแผนที่ (คลิกเพื่อกรอง)`}
+                                >
+                                  {/* Marker point dot */}
+                                  <span
+                                    className="w-3 h-3 rounded-full flex-shrink-0 shadow-sm ring-2 ring-white/20"
+                                    style={{ background: config.mapColor }}
+                                  />
+                                  <span className="truncate flex items-center gap-1">
+                                    <span>{config.icon}</span>
+                                    <span>{config.label}</span>
+                                  </span>
+                                </button>
+                              );
+                            })}
+                      </div>
                     </div>
                   </div>
-
-                  {hasFiltersActive && (
-                    <button
-                      onClick={clearFilters}
-                      className="text-[10px] text-slate-400 hover:text-white transition-colors"
-                    >
-                      ล้างตัวกรองทั้งหมด
-                    </button>
-                  )}
                 </div>
 
                 {/* Stations Results List */}
@@ -1456,7 +1489,7 @@ export default function LandingClient({ initialStations, session: initialSession
                           ))}
                         </select>
 
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex flex-wrap gap-1.5 pt-0.5">
                           {energyTypes.length > 0
                             ? energyTypes.map((et) => {
                                 const isActive = selectedType === et.id;
@@ -1464,15 +1497,19 @@ export default function LandingClient({ initialStations, session: initialSession
                                   <button
                                     key={et.id}
                                     onClick={() => setSelectedType(isActive ? "" : et.id)}
-                                    className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold transition-all touch-target"
+                                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all touch-target border"
                                     style={{
-                                      background: isActive ? `${et.map_color}33` : `${et.map_color}11`,
-                                      color: isActive ? et.map_color : "#64748b",
-                                      border: isActive ? `1px solid ${et.map_color}66` : "1px solid rgba(255,255,255,0.06)",
+                                      background: isActive ? `${et.map_color}25` : "rgba(255, 255, 255, 0.03)",
+                                      borderColor: isActive ? et.map_color : "rgba(255, 255, 255, 0.08)",
+                                      color: isActive ? "#ffffff" : "#cbd5e1",
                                     }}
                                   >
+                                    <span
+                                      className="w-2 h-2 rounded-full flex-shrink-0"
+                                      style={{ background: et.map_color }}
+                                    />
                                     <span>{et.icon}</span>
-                                    {et.name}
+                                    <span>{et.name}</span>
                                   </button>
                                 );
                               })
@@ -1483,15 +1520,19 @@ export default function LandingClient({ initialStations, session: initialSession
                                   <button
                                     key={type}
                                     onClick={() => setSelectedType(isActive ? "" : type)}
-                                    className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold transition-all touch-target"
+                                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all touch-target border"
                                     style={{
-                                      background: isActive ? `${config.mapColor}33` : `${config.mapColor}11`,
-                                      color: isActive ? config.mapColor : "#64748b",
-                                      border: isActive ? `1px solid ${config.mapColor}66` : "1px solid rgba(255,255,255,0.06)",
+                                      background: isActive ? `${config.mapColor}25` : "rgba(255, 255, 255, 0.03)",
+                                      borderColor: isActive ? config.mapColor : "rgba(255, 255, 255, 0.08)",
+                                      color: isActive ? "#ffffff" : "#cbd5e1",
                                     }}
                                   >
+                                    <span
+                                      className="w-2 h-2 rounded-full flex-shrink-0"
+                                      style={{ background: config.mapColor }}
+                                    />
                                     <span>{config.icon}</span>
-                                    {config.label}
+                                    <span>{config.label}</span>
                                   </button>
                                 );
                               })}
